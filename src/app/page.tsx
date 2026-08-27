@@ -147,119 +147,98 @@ export default function HomePage() {
           {/* Subtle Luxury Grid Lines */}
           <div className="absolute inset-0 opacity-[0.07] z-[2]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '80px 80px' }} />
 
-          {/* Hero Content */}
-          <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full pt-28 pb-24">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, delay: 0 }}
-              className="max-w-4xl"
-            >
-              {/* Editorial Top Line */}
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center gap-4 mb-8"
-              >
-                <div className="h-[1px] w-12 bg-luxury-gold" />
-                <p className="font-body text-xs text-luxury-gold uppercase tracking-[0.3em]">
-                  {heroContent?.subtitle || "AUTUMN/WINTER 2024"}
-                </p>
-              </motion.div>
+         {/* ==================== LUXURY EDITORIAL HERO ==================== */}
+<section className="relative min-h-screen flex items-center overflow-hidden">
+  {/* Subtle Luxury Grid Lines */}
+  <div className="absolute inset-0 opacity-[0.07] z-[2]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '80px 80px' }} />
 
-              <motion.h1
-                className="font-display font-bold leading-[1.05] text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
-                {taglineText}
-              </motion.h1>
+  {/* Dark scrim behind text for readability over the video, strongest on mobile */}
+  <div className="absolute inset-0 z-[3] bg-gradient-to-r from-black/70 via-black/40 to-transparent md:from-black/60 md:via-black/20 md:to-transparent" />
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="gold-line w-24 my-8"
-              />
+  {/* Hero Content */}
+  <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full pt-28 pb-24">
+    <motion.div
+      initial={{ opacity: 0, x: -50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 1, delay: 0 }}
+      className="max-w-4xl"
+    >
+      {/* Editorial Top Line */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="flex items-center gap-4 mb-8"
+      >
+        <div className="h-[1px] w-12 bg-luxury-gold" />
+        <p className="font-body text-xs text-luxury-gold uppercase tracking-[0.3em]">
+          {heroContent?.subtitle || "AUTUMN/WINTER 2024"}
+        </p>
+      </motion.div>
 
-              <motion.p
-                className="font-body text-sm sm:text-base md:text-lg text-cream-200/70 max-w-xl leading-relaxed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-              >
-                {heroContent?.description ||
-                  "Discover the latest trends in fashion. Curated collections that define modern elegance and sophistication."}
-              </motion.p>
+      <motion.h1
+        className="font-display font-bold leading-[1.05] text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
+        {taglineText}
+      </motion.h1>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
-                className="flex items-center gap-6 mt-10"
-              >
-                <Link href="/shop" className="btn-luxury inline-block">
-                  {heroContent?.button_text || "SHOP NOW"}
-                </Link>
-                <Link href="/new-arrivals" className="font-body text-xs uppercase tracking-[0.2em] text-cream-100/80 border-b border-cream-100/30 pb-1 hover:border-luxury-gold hover:text-luxury-gold transition-all">
-                  View New In
-                </Link>
-              </motion.div>
-            </motion.div>
-          </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+        className="gold-line w-24 my-8"
+      />
 
-          {/* Rotating Season Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.5, duration: 0.8 }}
-            className="absolute right-12 bottom-24 hidden lg:flex flex-col items-center justify-center"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-              className="w-24 h-24 rounded-full border border-luxury-gold/30 flex items-center justify-center"
-            >
-              <p className="text-[10px] font-body uppercase tracking-[0.2em] text-luxury-gold text-center leading-tight">
-                EST. 2024<br />Premium<br />Wear
-              </p>
-            </motion.div>
-          </motion.div>
+      <motion.p
+        className="font-body text-sm sm:text-base md:text-lg text-cream-100/95 max-w-xl leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+      >
+        {heroContent?.description ||
+          "Discover the latest trends in fashion. Curated collections that define modern elegance and sophistication."}
+      </motion.p>
 
-          {/* Animated Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.8 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-          >
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-6 h-10 border border-cream-100/30 rounded-full flex justify-center pt-2"
-            >
-              <div className="w-1 h-2 bg-luxury-gold rounded-full" />
-            </motion.div>
-          </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2 }}
+        className="flex items-center gap-6 mt-10"
+      >
+        <Link
+          href="/shop"
+          className="inline-block px-8 py-3 !bg-white !text-luxury-brown font-body text-xs uppercase tracking-[0.2em] font-semibold hover:!bg-cream-100 transition-all duration-300 shadow-lg"
+        >
+          {heroContent?.button_text || "SHOP NOW"}
+        </Link>
+        <Link href="/new-arrivals" className="font-body text-xs uppercase tracking-[0.2em] text-cream-100/90 border-b border-cream-100/40 pb-1 hover:border-luxury-gold hover:text-luxury-gold transition-all drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">
+          View New In
+        </Link>
+      </motion.div>
+    </motion.div>
+  </div>
 
-          {/* Bottom "Featured In" Logos Strip */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent py-6 z-[5]"
-          >
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-center gap-12 opacity-50">
-              <p className="font-body text-[10px] uppercase tracking-[0.3em] text-cream-100">VOGUE</p>
-              <p className="font-body text-[10px] uppercase tracking-[0.3em] text-cream-100">GQ</p>
-              <p className="font-body text-[10px] uppercase tracking-[0.3em] text-cream-100">ELLE</p>
-              <p className="font-body text-[10px] uppercase tracking-[0.3em] text-cream-100">HYPEBEAST</p>
-              <p className="hidden md:block font-body text-[10px] uppercase tracking-[0.3em] text-cream-100">ESQUIRE</p>
-            </div>
-          </motion.div>
-        </section>
+  {/* Rotating Season Badge */}
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: 1.5, duration: 0.8 }}
+    className="absolute right-12 bottom-24 hidden lg:flex flex-col items-center justify-center"
+  >
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+      className="w-24 h-24 rounded-full border border-luxury-gold/30 flex items-center justify-center"
+    >
+      <p className="text-[10px] font-body uppercase tracking-[0.2em] text-luxury-gold text-center leading-tight">
+        EST. 2024<br />Premium<br />Wear
+      </p>
+    </motion.div>
+  </motion.div>
+</section>
 
         {/* ==================== SCROLL REVEAL IMAGES ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
