@@ -58,28 +58,18 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
 
   return (
     <>
-      {/* Top bar - DARK GRADIENT + BLUR (Same as Filter Bar) */}
+      {/* Top bar - DARK GRADIENT + BLUR */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
         className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+        {/* Added px-4 for mobile so items don't touch the edge */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
-          {/* Left Side: Back button (Wishlist only) + Brand Logo */}
+          {/* Left Side: Brand Logo */}
           <div className="flex items-center gap-3 lg:gap-5">
-            {isWishlist && (
-              <button
-                onClick={() => router.back()}
-                className="p-2 rounded-full transition-all bg-black/30 text-white hover:bg-black/50 backdrop-blur-md border border-white/20"
-                title="Go back"
-                aria-label="Go back"
-              >
-                <ArrowLeft size={18} />
-              </button>
-            )}
-
             <Link href="/" className="flex flex-col">
               <span className="font-display text-3xl lg:text-4xl font-extrabold tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 {shopInfo?.shop_name || "OG WEAR"}
@@ -101,24 +91,24 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
             ))}
           </div>
 
-          {/* Right section - Gradient Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Right section - Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* HOME BUTTON - Only visible when NOT on homepage */}
             {!isHomepage && (
               <Link
                 href="/"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
                 aria-label="Go to Homepage"
                 title="Home"
               >
                 <Home size={18} />
-                <span className="hidden sm:inline text-xs font-body uppercase tracking-wider">
+                <span className="hidden md:inline text-xs font-body uppercase tracking-wider">
                   Home
                 </span>
               </Link>
             )}
 
-            {/* Search */}
+            {/* Search - Always Visible */}
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -146,19 +136,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               )}
             </Link>
 
-            {/* Account */}
-            <button
-              onClick={handleAuthClick}
-              className="relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
-              aria-label={user ? "Account" : "Sign in"}
-            >
-              <User size={18} />
-              {mounted && user && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-luxury-gold rounded-full border-2 border-black/50" />
-              )}
-            </button>
-
-            {/* Cart */}
+            {/* Cart - Always Visible */}
             <button
               onClick={() => setIsOpen(true)}
               className="relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -172,7 +150,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               )}
             </button>
 
-            {/* Mobile Menu */}
+            {/* Mobile Menu (Account moved INSIDE this) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -183,16 +161,16 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
         </div>
       </motion.div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Contains Account Button */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-xl lg:hidden pt-20"
+            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-xl lg:hidden pt-24"
           >
-            <div className="flex flex-col items-center justify-center h-full space-y-8">
+            <div className="flex flex-col items-center justify-center h-full space-y-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
@@ -203,14 +181,17 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
                   {link.label}
                 </Link>
               ))}
-              <div className="gold-line w-20 mx-0 my-8" />
+              <div className="gold-line w-20 mx-0 my-4" />
+              
+              {/* Account Button NOW HERE */}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setAuthOpen(true);
                 }}
-                className="font-body text-xs uppercase tracking-[0.2em] text-white border border-white/30 px-6 py-3 hover:border-luxury-gold hover:text-luxury-gold transition-all"
+                className="flex items-center gap-2 font-body text-sm uppercase tracking-[0.2em] text-white border border-white/30 px-6 py-3 rounded-full hover:border-luxury-gold hover:text-luxury-gold transition-all"
               >
+                <User size={18} />
                 {user ? "My Account" : "Sign In / Sign Up"}
               </button>
             </div>

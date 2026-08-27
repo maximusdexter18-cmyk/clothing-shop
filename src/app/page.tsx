@@ -144,7 +144,7 @@ export default function HomePage() {
         
         {/* ==================== MODERN EDITORIAL HERO ==================== */}
         <section className="relative min-h-screen flex items-center overflow-hidden pt-28 pb-12">
-          <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-20">
               
               {/* LEFT SIDE: Text + Button */}
@@ -201,19 +201,13 @@ export default function HomePage() {
                 transition={{ duration: 1, delay: 0.3 }}
                 className="w-full lg:w-1/2 flex justify-center lg:justify-end"
               >
-                <div className="relative w-full max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
-                  {/* 
-                    ✅ YOUR IMAGE IS HERE!
-                    Just ensure the file is named "hero-model.jpg" and is in your "public" folder.
-                  */}
+                {/* Removed gradient overlay here, added max width & margin on mobile */}
+                <div className="relative w-full max-w-[320px] sm:max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
                   <img
                     src="/hero-model.jpg" 
                     alt="Hero Model"
                     className="w-full h-full object-cover"
                   />
-                  
-                  {/* Subtle Gradient Overlay for depth */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
                 </div>
               </motion.div>
             </div>
@@ -336,7 +330,7 @@ export default function HomePage() {
               </p>
             )}
 
-            {/* ==================== MORE PICKS (Bigger Cards, No View All) ==================== */}
+            {/* ==================== MORE PICKS ==================== */}
             {filteredProducts.length > 0 && (
               <div className="max-w-7xl mx-auto px-6 lg:px-8 mt-4 mb-10">
                 <motion.div
@@ -354,7 +348,6 @@ export default function HomePage() {
                   <div className="gold-line w-20 mx-auto" />
                 </motion.div>
 
-                {/* Grid: 2 cols on phone, 4 cols on desktop (Bigger cards) */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
                   {filteredProducts.map((product, i) => {
                     const smallImages =

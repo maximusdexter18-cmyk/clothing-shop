@@ -149,16 +149,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
         >
           {loopProducts.map((product, index) => {
             const imageUrl = getImageUrl(product);
-            const price = product.is_discounted && product.discount_price
-              ? product.discount_price
-              : product.original_price;
 
             return (
               <div
                 key={`${product.id}-${index}`}
-                className={`flex-shrink-0 rounded-sm overflow-hidden shadow-xl cursor-pointer transition-transform duration-300 ${
-                  isDesktop ? 'group perspective-1000 hover:z-10' : ''
-                }`}
+                className="flex-shrink-0 rounded-sm overflow-hidden shadow-xl cursor-pointer"
                 style={{
                   width: isDesktop ? '320px' : '220px', // WIDER CARDS
                   height: isDesktop ? '400px' : '300px',
@@ -166,15 +161,8 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
                 }}
                 onClick={() => onProductClick(product)}
               >
-                <div
-                  className={`w-full h-full transition-transform duration-300 ${
-                    isDesktop ? 'group-hover:rotate-y-12 group-hover:scale-105 transform-3d' : ''
-                  }`}
-                  style={{ transformStyle: 'preserve-3d' }}
-                >
-                  {/* Changed object-cover to object-contain so NO CROPPING */}
-                  <img src={imageUrl} alt={product.name} className="w-full h-full object-contain bg-black/20" />
-                </div>
+                {/* Changed object-cover to object-contain so NO CROPPING, Removed bg-black/20 */}
+                <img src={imageUrl} alt={product.name} className="w-full h-full object-contain" />
               </div>
             );
           })}
