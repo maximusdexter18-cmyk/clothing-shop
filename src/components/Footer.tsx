@@ -162,22 +162,25 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
             <div className="mt-8">
               <h4 className="font-display text-base font-bold text-cream-100 mb-4">Share Your Feedback</h4>
               <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+                {/* Name input - Now Optional */}
                 <input 
                   type="text" 
-                  placeholder="Your Name" 
+                  placeholder="Your Name (Optional)" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
                   className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
                 />
+                
+                {/* Email input - Now Optional */}
                 <input 
                   type="email" 
-                  placeholder="Your Email" 
+                  placeholder="Your Email (Optional)" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                   className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
                 />
+                
+                {/* Message - REQUIRED */}
                 <textarea 
                   placeholder="Tell us what you think..." 
                   value={message}
@@ -186,8 +189,53 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                   rows={3}
                   className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
                 />
+                
                 {error && <p className="text-xs text-red-400">{error}</p>}
                 {success && <p className="text-xs text-emerald-400">Thank you! Your feedback has been sent.</p>}
+                
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center gap-2 bg-luxury-gold text-luxury-brown py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-amber-400 transition-all disabled:opacity-50"
+                >
+                  {submitting ? "Sending..." : <><Send size={14} /> Send Feedback</>}
+                </button>
+              </form>
+                        {/* Feedback Form */}
+            <div className="mt-8">
+              <h4 className="font-display text-base font-bold text-cream-100 mb-4">Share Your Feedback</h4>
+              <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+                {/* Name input - Now Optional */}
+                <input 
+                  type="text" 
+                  placeholder="Your Name (Optional)" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                
+                {/* Email input - Now Optional */}
+                <input 
+                  type="email" 
+                  placeholder="Your Email (Optional)" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                
+                {/* Message - REQUIRED */}
+                <textarea 
+                  placeholder="Tell us what you think..." 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  rows={3}
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                
+                {error && <p className="text-xs text-red-400">{error}</p>}
+                {success && <p className="text-xs text-emerald-400">Thank you! Your feedback has been sent.</p>}
+                
                 <button 
                   type="submit" 
                   disabled={submitting}
@@ -197,8 +245,9 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                 </button>
               </form>
             </div>
-          </div>
-
+            </div>
+            </div>
+            
           {/* Location, Review Link & Google Map */}
           <div>
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Find Us</h3>
@@ -224,8 +273,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
     <Star size={18} className="text-luxury-gold flex-shrink-0" />
     <span>Review us on Google Maps</span>
   </a>
-)}
-              
+)}    
               {/* Embedded Google Map */}
               <div className="w-full h-40 rounded-lg overflow-hidden border border-white/10 shadow-lg">
                 {mapUrl ? (

@@ -150,7 +150,7 @@ export default function AdminPage() {
         setShopAddress(shopRes.data.address || "");
         setShopAbout(shopRes.data.about_us || "");
         setShopLocation(shopRes.data.location || "");
-        setShopReviewLink(shopRes.data.review_link || ""); // <--- ADDED
+        setShopReviewLink(shopRes.data.review_link || "");
       }
 
       const srRes = await supabase
@@ -285,7 +285,7 @@ export default function AdminPage() {
           address: shopAddress,
           about_us: shopAbout,
           location: shopLocation,
-          review_link: shopReviewLink, // <--- ADDED
+          review_link: shopReviewLink,
         }),
       });
       fetchAdminData();
@@ -1050,7 +1050,12 @@ export default function AdminPage() {
                   {feedback.map((fb: any) => (
                     <div key={fb.id} className="bg-white p-4 rounded-sm border border-cream-300/50">
                       <div className="flex justify-between">
-                        <p className="font-body text-sm font-bold text-luxury-brown">{fb.name} <span className="font-normal text-luxury-brown/50">({fb.email})</span></p>
+                        <p className="font-body text-sm font-bold text-luxury-brown">
+                          {fb.name || "Anonymous"} 
+                          {fb.email && fb.email !== "Not provided" && (
+                            <span className="font-normal text-luxury-brown/50"> ({fb.email})</span>
+                          )}
+                        </p>
                         <span className="text-xs text-luxury-brown/40">{new Date(fb.created_at).toLocaleString()}</span>
                       </div>
                       <p className="font-body text-sm text-luxury-brown mt-2">{fb.message}</p>

@@ -4,11 +4,15 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, message } = body;
+    const { message } = body;
 
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!message) {
+      return NextResponse.json({ error: "Feedback message is required" }, { status: 400 });
     }
+
+    // Optional fields (no longer required)
+    const name = body.name || "Anonymous";
+    const email = body.email || "Not provided";
 
     const { data, error } = await supabaseAdmin
       .from("site_feedback")
