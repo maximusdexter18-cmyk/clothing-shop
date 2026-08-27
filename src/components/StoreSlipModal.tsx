@@ -27,7 +27,6 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
     setMounted(true);
   }, []);
 
-  // Stable Date & Ref ID to avoid SSR hydration mismatches
   const dateString = useMemo(() => {
     return new Date().toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -51,42 +50,42 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
 
   const generatePDF = async (): Promise<jsPDF | null> => {
     if (!hiddenPagesRef.current) return null;
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    for (let i = 0; i < items.length; i++) {
-      const pageEl = hiddenPagesRef.current.children[i] as HTMLElement;
-      if (!pageEl) continue;
-
-      const canvas = await html2canvas(pageEl, {
-        scale: 2.5,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#FAF7F2",
-        logging: false,
-        onclone: (clonedDoc) => {
-          const headings = clonedDoc.querySelectorAll("h1, h2, h3, h4, p, span");
-          headings.forEach((el) => {
-            (el as HTMLElement).style.overflow = "visible";
-            (el as HTMLElement).style.lineHeight = "1.4";
-          });
-        },
+    try {
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      if (i > 0) pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+      for (let i = 0; i < items.length; i++) {
+        const pageEl = hiddenPagesRef.current.children[i] as HTMLElement;
+        if (!pageEl) continue;
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#FAF7F2",
+          logging: false,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const imgWidth = pdfWidth - 20; // 10mm margins on each side
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+      }
+
+      return pdf;
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      return null;
     }
-
-    return pdf;
   };
 
   const handleDownloadPDF = async () => {
@@ -97,9 +96,12 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
         pdf.save(`Curated_Slip_${Date.now()}.pdf`);
         setDownloadSuccess(true);
         setTimeout(() => setDownloadSuccess(false), 2500);
+      } else {
+        alert("Sorry, the PDF could not be generated. Please try again.");
       }
     } catch (err) {
-      console.error("Failed to generate PDF slip:", err);
+      console.error("Download error:", err);
+      alert("Sorry, there was an error downloading the PDF.");
     } finally {
       setDownloading(false);
     }
@@ -109,12 +111,13 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
     try {
       setDownloading(true);
       const pdf = await generatePDF();
-      if (!pdf) return;
+      if (!pdf) {
+        alert("Sorry, the PDF could not be generated. Please try again.");
+        return;
+      }
 
       const pdfBlob = pdf.output("blob");
-      const file = new File([pdfBlob], `Curated_Slip.pdf`, {
-        type: "application/pdf",
-      });
+      const file = new File([pdfBlob], `Curated_Slip.pdf`, { type: "application/pdf" });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -128,7 +131,9 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
         handleDownloadPDF();
       }
     } catch (err) {
-      console.error("Failed to share PDF slip:", err);
+      console.error("Share error:", err);
+      alert("Sorry, sharing is not supported on this device. Downloading instead...");
+      handleDownloadPDF();
     } finally {
       setDownloading(false);
     }
@@ -195,7 +200,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
         )}
 
         {/* VISIBLE PAGE PREVIEW */}
-        <div className="w-full bg-[#FAF7F2] border border-luxury-brown/20 rounded-xl p-4 shadow-lg flex flex-col text-luxury-brown select-none relative overflow-hidden">
+        <div className="w-full bg-[#FAF7F2] border border-luxury-brown/20 rounded-xl p-3 shadow-lg select-none relative overflow-hidden flex flex-col gap-3">
           {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId, checkedItems.has(activeItem.product.id), toggleCheck)}
         </div>
 
@@ -240,7 +245,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
             {items.map((item, idx) => (
               <div
                 key={`pdf-page-${item.product.id}-${idx}`}
-                style={{ width: "210mm", minHeight: "297mm", padding: "12mm", boxSizing: "border-box" }}
+                style={{ width: "210mm", minHeight: "297mm", padding: "10mm", boxSizing: "border-box" }}
                 className="bg-[#FAF7F2] text-luxury-brown flex flex-col justify-between"
               >
                 {renderProductSlipCard(item, idx, totalPages, dateString, refId, false, () => {}, true)}
@@ -253,7 +258,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   );
 }
 
-// Render helper for single product slip card layout
+// Render helper: 50% Image Left, 50% Details Right
 function renderProductSlipCard(
   item: CartItem,
   pageIdx: number,
@@ -280,75 +285,146 @@ function renderProductSlipCard(
 
   const selectedSize = item.size || "Standard";
 
+  // ========== PDF LAYOUT (Split 50/50) ==========
   if (isPdfExport) {
-    // PDF A4 Layout (With Details)
     return (
-      <div className="w-full h-full bg-[#FAF7F2] p-6 flex flex-col justify-between text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
-        {/* Top Bar */}
-        <div className="flex flex-col items-center mb-2">
-          <div className="w-24 h-[2px] bg-[#C5A55A] mb-2" />
-          <span className="font-mono text-xs font-bold text-[#3D2B1F]/70 tracking-[0.2em]">OG WEAR • CURATED SLIP</span>
-          <span className="font-mono text-[10px] text-[#3D2B1F]/40">{refId} • {dateString}</span>
+      <div className="w-full h-full flex flex-col bg-[#FAF7F2] text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
+        {/* Top Bar (Full Width) */}
+        <div className="flex items-center justify-between p-4 border-b border-[#3D2B1F]/10">
+          <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#3D2B1F]">OG WEAR • CURATED SLIP</span>
+          <span className="font-mono text-xs text-[#3D2B1F]/60">{dateString} • {refId}</span>
         </div>
 
-        {/* HUGE Product Image */}
-        <div className="relative w-full flex-1 min-h-[550px] my-2 rounded-2xl overflow-hidden border border-[#3D2B1F]/10 shadow-lg flex items-center justify-center"
-             style={{ background: "radial-gradient(circle, #FFFFFF 0%, #F5E6C4 100%)" }}>
-          <img
-            src={fullBodyImg}
-            alt={item.product.name}
-            className="max-h-[520px] w-auto max-w-full object-contain mix-blend-multiply"
-            crossOrigin="anonymous"
-          />
-
-          {/* Discount Badge */}
-          {isDiscounted && (
-            <div className="absolute top-6 right-6 bg-[#3D2B1F] text-[#F5E6C4] font-sans text-sm font-extrabold px-5 py-2 rounded-full shadow-md rotate-3">
-              <Tag size={14} className="inline mr-1" /> {discountPercent}% OFF
-            </div>
-          )}
-          {/* Checked Badge */}
-          {isChecked && (
-            <div className="absolute top-6 left-6 bg-emerald-600 text-white font-sans text-sm font-extrabold px-5 py-2 rounded-full shadow-md">
-              <Check size={14} className="inline mr-1" /> FOUND
-            </div>
-          )}
-        </div>
-
-        {/* DETAILS BOX - INCLUDES NAME, PRICE, SIZE */}
-        <div className="bg-white rounded-xl p-6 border border-[#3D2B1F]/10 shadow-sm space-y-4 mt-2">
+        {/* 50/50 Split Content */}
+        <div className="flex flex-1">
           
-          {/* Product Name & Brand */}
-          <div className="flex items-start justify-between border-b border-[#3D2B1F]/10 pb-4">
+          {/* LEFT HALF - IMAGE */}
+          <div className="w-1/2 p-4 flex items-center justify-center bg-white border-r border-[#3D2B1F]/10">
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img
+                src={fullBodyImg}
+                alt={item.product.name}
+                className="max-h-full max-w-full object-contain mix-blend-multiply"
+                crossOrigin="anonymous"
+              />
+              
+              {isDiscounted && (
+                <div className="absolute top-2 right-2 bg-[#3D2B1F] text-[#FAF7F2] text-xs font-extrabold px-3 py-1 rounded-full rotate-3 shadow">
+                  -{discountPercent}%
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT HALF - DETAILS */}
+          <div className="w-1/2 p-6 flex flex-col justify-center space-y-6">
             <div>
               {item.product.brand?.name && (
                 <span className="font-sans text-[10px] font-bold text-[#C5A55A] uppercase tracking-[0.2em] block">
                   {item.product.brand.name}
                 </span>
               )}
-              <h2 className="font-serif text-2xl font-bold text-[#3D2B1F] leading-tight mt-1">
+              <h2 className="font-serif text-3xl font-bold leading-tight text-[#3D2B1F] mt-2">
                 {item.product.name}
               </h2>
             </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center border-b border-[#3D2B1F]/10 pb-2">
+                <span className="text-xs font-bold uppercase">Size Selected</span>
+                <span className="font-sans text-xl font-extrabold text-[#C5A55A]">{selectedSize}</span>
+              </div>
+              
+              <div className="flex justify-between items-center border-b border-[#3D2B1F]/10 pb-2">
+                <span className="text-xs font-bold uppercase">Quantity</span>
+                <span className="font-sans text-xl font-extrabold">{item.quantity}</span>
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-xs font-bold uppercase">Final Price</span>
+                <div className="text-right">
+                  <div className="font-serif text-2xl font-extrabold text-[#3D2B1F]">
+                    ₹{finalPrice.toFixed(0)}
+                  </div>
+                  {isDiscounted && (
+                    <span className="text-xs text-[#3D2B1F]/40 line-through block">
+                      ₹{originalPrice.toFixed(0)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Checkmark Bar */}
+        <div className="p-4 border-t border-[#3D2B1F]/10 flex items-center justify-between">
+          <span className="text-xs font-bold text-[#3D2B1F]/60">Picked for easy item identification</span>
+          <div className="flex items-center gap-1 text-xs font-extrabold text-emerald-600">
+            <Check size={14} /> FOUND
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== MODAL PREVIEW (Split 50/50) ==========
+  return (
+    <div className="flex flex-col space-y-3">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-luxury-brown/10 pb-2">
+        <span className="font-mono text-[10px] font-bold tracking-[0.15em] text-luxury-brown">OG WEAR • CURATED SLIP</span>
+        <span className="font-mono text-[9px] text-luxury-brown/60">{dateString} • {refId}</span>
+      </div>
+
+      {/* 50/50 Content */}
+      <div className="flex flex-row gap-3">
+        {/* Left: Image */}
+        <div className="w-1/2 bg-white rounded-lg border border-cream-300 p-2 flex items-center justify-center relative" style={{ minHeight: "280px" }}>
+          <img
+            src={fullBodyImg}
+            alt={item.product.name}
+            className="max-h-full max-w-full object-contain mix-blend-multiply"
+            crossOrigin="anonymous"
+          />
+          {isDiscounted && (
+            <div className="absolute top-2 right-2 bg-luxury-brown text-cream-100 text-[10px] font-extrabold px-2 py-1 rounded-full rotate-3 shadow">
+              -{discountPercent}%
+            </div>
+          )}
+        </div>
+
+        {/* Right: Details */}
+        <div className="w-1/2 flex flex-col justify-center space-y-3">
+          <div>
+            {item.product.brand?.name && (
+              <span className="font-body text-[10px] font-bold text-luxury-gold uppercase tracking-[0.15em] block">
+                {item.product.brand.name}
+              </span>
+            )}
+            <h3 className="font-display text-xl font-bold text-luxury-brown mt-1">
+              {item.product.name}
+            </h3>
           </div>
 
-          {/* Size, Quantity, and Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-4 py-2 rounded-xl text-[#3D2B1F] font-sans text-xs font-bold">
-                SIZE: <strong className="text-[#C5A55A] text-sm">{selectedSize}</strong>
-              </span>
-              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-4 py-2 rounded-xl text-[#3D2B1F] font-sans text-xs font-bold">
-                QTY: <strong>{item.quantity}</strong>
-              </span>
-            </div>
+          <div className="flex justify-between items-center border-b border-cream-200 pb-2">
+            <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Size</span>
+            <span className="font-body text-lg font-extrabold text-luxury-gold">{selectedSize}</span>
+          </div>
 
+          <div className="flex justify-between items-center border-b border-cream-200 pb-2">
+            <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Qty</span>
+            <span className="font-body text-lg font-extrabold text-luxury-brown">{item.quantity}</span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Price</span>
             <div className="text-right">
-              <div className="font-serif text-3xl font-extrabold text-[#3D2B1F]">
+              <span className="font-display text-xl font-extrabold text-luxury-brown block">
                 ₹{finalPrice.toFixed(0)}
-              </div>
+              </span>
               {isDiscounted && (
-                <span className="font-sans text-xs text-[#3D2B1F]/40 line-through block">
+                <span className="font-body text-[10px] text-luxury-brown/40 line-through">
                   ₹{originalPrice.toFixed(0)}
                 </span>
               )}
@@ -356,78 +432,8 @@ function renderProductSlipCard(
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Modal Screen Preview Layout (With Details)
-  return (
-    <div className="flex flex-col space-y-3">
-      {/* Elegant Top Bar */}
-      <div className="flex flex-col items-center mb-1">
-        <div className="w-16 h-[2px] bg-luxury-gold mb-1" />
-        <span className="font-mono text-[9px] font-bold text-luxury-brown/60 tracking-[0.2em]">OG WEAR • CURATED SLIP</span>
-        <span className="font-mono text-[8px] text-luxury-brown/40">{refId} • {dateString}</span>
-      </div>
-
-      {/* BIG Image Container with Gradient */}
-      <div className="relative w-full h-80 sm:h-96 rounded-xl overflow-hidden border border-cream-300 flex items-center justify-center"
-           style={{ background: "radial-gradient(circle, #FFFFFF 0%, #F5E6C4 100%)" }}>
-        <img
-          src={fullBodyImg}
-          alt={item.product.name}
-          className="max-h-full max-w-full object-contain mix-blend-multiply"
-          crossOrigin="anonymous"
-        />
-        {isDiscounted && (
-          <div className="absolute top-3 right-3 bg-luxury-brown text-cream-100 font-body text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md rotate-3">
-            <Tag size={12} className="inline mr-1" /> {discountPercent}% OFF
-          </div>
-        )}
-        {isChecked && (
-          <div className="absolute top-3 left-3 bg-emerald-600 text-white font-body text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">
-            <Check size={12} className="inline mr-1" /> FOUND
-          </div>
-        )}
-      </div>
-
-      {/* DETAILS BOX */}
-      <div className="bg-white rounded-xl p-4 border border-cream-300 space-y-3">
-        <div className="flex items-start justify-between border-b border-cream-200 pb-2">
-          <div>
-            {item.product.brand?.name && (
-              <span className="font-body text-[9px] font-bold text-luxury-gold uppercase tracking-[0.2em] block">
-                {item.product.brand.name}
-              </span>
-            )}
-            <h3 className="font-display text-lg font-bold text-luxury-brown">
-              {item.product.name}
-            </h3>
-          </div>
-        </div>
-
-        <div className="flex items-end justify-between">
-          <div className="flex items-center gap-2">
-            <span className="bg-cream-100 border border-cream-300 px-3 py-1.5 rounded-lg">
-              Size: <span className="text-luxury-gold font-extrabold">{selectedSize}</span>
-            </span>
-            <span className="bg-cream-100 border border-cream-300 px-3 py-1.5 rounded-lg">
-              Qty: {item.quantity}
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="font-display text-2xl font-extrabold text-luxury-brown block">
-              ₹{finalPrice.toFixed(0)}
-            </span>
-            {isDiscounted && (
-              <span className="font-body text-[10px] text-luxury-brown/40 line-through">
-                ₹{originalPrice.toFixed(0)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Check Button */}
+      {/* Check Button */}
       {onToggleCheck && (
         <button
           onClick={() => onToggleCheck(item.product.id)}
