@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import BackButton from "@/components/BackButton";
-import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Product, ShopInfo, SocialMedia, CATEGORIES, MAJOR_BRANDS } from "@/lib/types";
+import { X, SlidersHorizontal } from "lucide-react";
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -83,6 +82,12 @@ export default function ShopPage() {
     return filtered;
   }, [products, selectedGender, selectedCategory, selectedBrand, availability, sortBy]);
 
+  const activeFilterCount = 
+    (selectedGender ? 1 : 0) + 
+    (selectedCategory ? 1 : 0) + 
+    (selectedBrand ? 1 : 0) + 
+    (availability !== "all" ? 1 : 0);
+
   const clearFilters = () => {
     setSelectedGender(null);
     setSelectedCategory(null);
@@ -91,70 +96,109 @@ export default function ShopPage() {
     setSortBy("newest");
   };
 
+  const removeFilter = (type: string) => {
+    if (type === "gender") setSelectedGender(null);
+    if (type === "category") setSelectedCategory(null);
+    if (type === "brand") setSelectedBrand(null);
+    if (type === "availability") setAvailability("all");
+  };
+
   return (
     <>
       <Navigation shopInfo={shopInfo} showBack />
-      <main className="min-h-screen bg-transparent pt-32">
+      <main className="min-h-screen bg-transparent pt-24">
         
-        {/* ========== HEADER WITH ARROW (Heading Centered) ========== */}
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 mb-8">
-          <div className="absolute top-0 left-6 lg:left-8">
-            <BackButton />
-          </div>
-          <div className="text-center pt-10 md:pt-0">
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
-              SHOP ALL
-            </h1>
-            <div className="gold-line w-24 mx-auto mt-4" />
-            <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em] mt-2">
-              {filteredProducts.length} Products
-            </p>
-          </div>
+        {/* Header */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-4">
+          <h1 className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
+            SHOP ALL
+          </h1>
+          <div className="gold-line w-24 mx-auto mt-4" />
+          <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em] mt-2">
+            {filteredProducts.length} Products
+          </p>
         </div>
 
-        {/* ========== FILTER BAR (DESKTOP ONLY) ========== */}
-        <section className="sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 hidden md:block">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              {/* Gender Pills - ONLY ON DESKTOP */}
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
-                {[null, "men", "women", "kids"].map((g) => (
-                  <button key={g || "all"} onClick={() => { setSelectedGender(g); setSelectedCategory(null); }}
-                    className={`filter-pill whitespace-nowrap bg-white text-luxury-brown ${selectedGender === g ? "active" : ""}`}>
-                    {g ? `${g.charAt(0).toUpperCase() + g.slice(1)}` : "All"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sort + Filter Buttons - ONLY ON DESKTOP */}
-              <div className="flex items-center gap-3">
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="font-body text-xs border border-white/20 rounded px-3 py-2 bg-black/40 text-white backdrop-blur-md focus:outline-none">
-                  <option value="newest">Newest</option>
-                  <option value="price-low">Price: Low → High</option>
-                  <option value="price-high">Price: High → Low</option>
-                </select>
-                <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 rounded-full text-white bg-black/40 backdrop-blur-md border border-white/20 hover:bg-black/60">
-                  <span>Filters</span>
-                  {(selectedBrand || availability !== "all" || selectedCategory) && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
+        {/* Selected Filters Bar */}
+        {(selectedGender || selectedCategory || selectedBrand || availability !== "all") && (
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-4">
+            <div className="flex flex-wrap items-center gap-2 justify-center">
+              <span className="font-body text-xs text-cream-100/60 uppercase tracking-wider">Filters:</span>
+              {selectedGender && (
+                <button onClick={() => removeFilter("gender")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {selectedGender.charAt(0).toUpperCase() + selectedGender.slice(1)} <X size={14} />
                 </button>
-              </div>
+              )}
+              {selectedCategory && (
+                <button onClick={() => removeFilter("category")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {selectedCategory} <X size={14} />
+                </button>
+              )}
+              {selectedBrand && (
+                <button onClick={() => removeFilter("brand")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {selectedBrand} <X size={14} />
+                </button>
+              )}
+              {availability !== "all" && (
+                <button onClick={() => removeFilter("availability")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {availability === "in-stock" ? "In Stock" : "Out of Stock"} <X size={14} />
+                </button>
+              )}
+              <button onClick={clearFilters} className="text-xs font-body text-cream-100/60 underline underline-offset-2 hover:text-luxury-gold ml-2">
+                Clear All
+              </button>
             </div>
           </div>
-        </section>
+        )}
 
-        {/* ========== MOBILE FILTERS (Only Filter Button) ========== */}
-        <div className="md:hidden sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 py-3 px-4">
-          <button 
-            onClick={() => setShowFilters(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full text-white bg-black/40 backdrop-blur-md border border-white/20 hover:bg-black/60"
-          >
-            <span>Filters</span>
-            {(selectedBrand || availability !== "all" || selectedCategory) && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
-          </button>
+        {/* ========== AMAZON-STYLE CHIP BAR ========== */}
+        <div className="sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
+            <button
+              onClick={() => setShowFilters(true)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-luxury-gold text-luxury-gold bg-black/40 font-body text-xs font-bold uppercase tracking-wider hover:bg-luxury-gold hover:text-luxury-brown transition-all"
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-luxury-gold text-luxury-brown text-[10px] font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            <div className="flex-shrink-0 relative">
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="appearance-none pl-4 pr-8 py-2 rounded-full border-2 border-white/20 bg-black/40 text-white font-body text-xs font-bold uppercase tracking-wider focus:outline-none"
+              >
+                <option value="newest">Popular</option>
+                <option value="price-low">Price: Low → High</option>
+                <option value="price-high">Price: High → Low</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60 text-xs">▼</span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {[null, "men", "women", "kids"].map((g) => (
+                <button
+                  key={g || "all"}
+                  onClick={() => { setSelectedGender(g); setSelectedCategory(null); }}
+                  className={`px-4 py-2 rounded-full border-2 font-body text-xs font-bold uppercase tracking-wider transition-all ${
+                    selectedGender === g 
+                      ? "border-luxury-gold text-luxury-gold bg-black/40" 
+                      : "border-white/20 text-white/60 bg-black/40 hover:border-white/40"
+                  }`}
+                >
+                  {g ? `${g.charAt(0).toUpperCase() + g.slice(1)}` : "All"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* ========== FILTER SIDEBAR / PANEL ========== */}
+        {/* Filter Sidebar */}
         <AnimatePresence>
           {showFilters && (
             <>
@@ -165,14 +209,12 @@ export default function ShopPage() {
                 onClick={() => setShowFilters(false)}
                 className="fixed inset-0 bg-black/60 z-40"
               />
-
-              {/* Mobile Sidebar */}
               <motion.div
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-black/90 backdrop-blur-xl z-50 overflow-y-auto p-6 md:hidden"
+                className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-black/90 backdrop-blur-xl z-50 overflow-y-auto p-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="font-display text-xl font-bold text-cream-100">Refine Results</h4>
@@ -181,7 +223,6 @@ export default function ShopPage() {
                   </button>
                 </div>
 
-                {/* Gender */}
                 <div className="border-b border-white/10 pb-6 mb-6">
                   <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, category: !prev.category }))}
                     className="flex items-center justify-between w-full mb-4">
@@ -200,7 +241,6 @@ export default function ShopPage() {
                   )}
                 </div>
 
-                {/* Brand */}
                 <div className="border-b border-white/10 pb-6 mb-6">
                   <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, brand: !prev.brand }))}
                     className="flex items-center justify-between w-full mb-4">
@@ -223,7 +263,6 @@ export default function ShopPage() {
                   )}
                 </div>
 
-                {/* Availability */}
                 <div className="border-b border-white/10 pb-6 mb-6">
                   <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, availability: !prev.availability }))}
                     className="flex items-center justify-between w-full mb-4">
@@ -250,7 +289,7 @@ export default function ShopPage() {
           )}
         </AnimatePresence>
 
-        {/* ========== PRODUCTS GRID ========== */}
+        {/* Products Grid */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             {loading ? (

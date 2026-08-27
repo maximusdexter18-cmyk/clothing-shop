@@ -10,32 +10,48 @@ interface PosterCarouselProps {
 }
 
 const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClick }) => {
-  const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll state
+  const [position, setPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [scrollLeftStart, setScrollLeftStart] = useState(0);
-  const [autoScrollPaused, setAutoScrollPaused] = useState(false);
-
+  const [isPaused, setIsPaused] = useState(false);
+  
+  // Dimensions
   const [cardWidth, setCardWidth] = useState(450);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
 
-  // Duplicate products for infinite loop
-  const loopProducts = [...products, ...products, ...products];
+  // Velocity & Drag tracking
+  const velocityRef = useRef(0);
+  const dragStartXRef = useRef(0);
+  const dragStartPosRef = useRef(0);
+  const rafRef = useRef<number>();
+  const productsRef = useRef(products);
+
+  // Keep products ref updated
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
+
+  // Duplicate products for infinite loop (4x)
+  const loopProducts = [...products, ...products, ...products, ...products];
 
   const getImageUrl = (product: Product) => {
-    return product.images?.filter((img) => img.image_type === "full-body")[0]?.image_url ||
+    return (
+      product.images?.filter((img) => img.image_type === "full-body")[0]?.image_url ||
       product.images?.find((img) => img.is_primary)?.image_url ||
       product.images?.[0]?.image_url ||
-      "/placeholder.png";
+      "/placeholder.png"
+    );
   };
 
-  // Update dimensions - HUGE CARDS
+  // Update dimensions
   useEffect(() => {
     const updateMetrics = () => {
-      setIsDesktop(window.innerWidth >= 1024);
+      const isLarge = window.innerWidth >= 1024;
+      setIsDesktop(isLarge);
       setViewportWidth(window.innerWidth);
       setCardWidth(window.innerWidth < 768 ? 280 : 450);
     };
@@ -44,207 +60,182 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener("resize", updateMetrics);
   }, []);
 
-  // Center Spotlight 3D
-  const updateSpotlight = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) return;
+  // ========== AUTO-SCROLL (60fps, works on Mobile & Desktop) ==========
+  const animate = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
 
-    const cards = el.querySelectorAll<HTMLElement>(".carousel-card");
-    const center = viewportWidth / 2;
+    // If not dragging, auto-move
+    if (!isDragging) {
+      const baseSpeed = isDesktop ? 0.8 : 0.6; // Slow glide
+      setPosition((prev) => {
+        let next = prev - baseSpeed;
+        const halfWidth = track.scrollWidth / 3; // 1/3 loop point
+        if (Math.abs(next) >= halfWidth) {
+          next = 0; // Seamless reset
+        }
+        return next;
+      });
+    }
 
-    cards.forEach((card) => {
-      const cardCenter = card.offsetLeft - el.scrollLeft + card.offsetWidth / 2;
-      const distance = Math.abs(cardCenter - center);
-      
-      const maxDistance = viewportWidth / 2 + cardWidth;
-      const normalizedDistance = Math.min(distance / maxDistance, 1);
-
-      const scale = 1.1 - (normalizedDistance * 0.35);
-      const rotateY = normalizedDistance * -25;
-      const translateZ = normalizedDistance * -100;
-
-      card.style.transform = `perspective(1200px) scale(${scale}) rotateY(${rotateY}deg) translateZ(${translateZ}px)`;
-      card.style.opacity = `${1 - (normalizedDistance * 0.4)}`;
-      card.style.zIndex = `${10 - Math.round(normalizedDistance * 10)}`;
-    });
-  }, [viewportWidth, cardWidth]);
+    rafRef.current = requestAnimationFrame(animate);
+  }, [isDragging, isDesktop]);
 
   useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    const handleScroll = () => updateSpotlight();
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    updateSpotlight();
-    
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [updateSpotlight]);
-
-  // Infinite Auto-Scroll (Mobile + Desktop)
-  useEffect(() => {
-    if (isDragging || autoScrollPaused) return;
-
-    const el = trackRef.current;
-    if (!el) return;
-
-    let animationFrameId: number;
-    const scroll = () => {
-      el.scrollLeft += 0.8;
-      
-      const halfWidth = el.scrollWidth / 3;
-      if (el.scrollLeft >= halfWidth) {
-        el.scrollLeft = 0;
-      }
-      animationFrameId = requestAnimationFrame(scroll);
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-    
-    animationFrameId = requestAnimationFrame(scroll);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isDragging, autoScrollPaused]);
+  }, [animate]);
 
-  // ========== DRAG / SWIPE ==========
+  // ========== NATIVE WHEEL SUPPORT (Desktop) ==========
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (!isDesktop) return;
+      // Normalize wheel delta and add to position
+      const delta = e.deltaY || e.deltaX;
+      setPosition((prev) => prev - delta);
+    },
+    [isDesktop]
+  );
+
+  // ========== DRAG / TOUCH ==========
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
-    setAutoScrollPaused(true);
-    setDragStartX(e.pageX);
-    setScrollLeftStart(trackRef.current?.scrollLeft || 0);
+    dragStartXRef.current = e.clientX;
+    dragStartPosRef.current = position;
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    e.preventDefault();
-    const walk = (e.pageX - dragStartX);
-    if (trackRef.current) {
-      trackRef.current.scrollLeft = scrollLeftStart - walk;
-    }
+    const delta = e.clientX - dragStartXRef.current;
+    setPosition(dragStartPosRef.current + delta);
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    setAutoScrollPaused(false);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
-    setAutoScrollPaused(true);
-    setDragStartX(e.touches[0].pageX);
-    setScrollLeftStart(trackRef.current?.scrollLeft || 0);
+    dragStartXRef.current = e.touches[0].clientX;
+    dragStartPosRef.current = position;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
-    const walk = (e.touches[0].pageX - dragStartX);
-    if (trackRef.current) {
-      trackRef.current.scrollLeft = scrollLeftStart - walk;
-    }
+    const delta = e.touches[0].clientX - dragStartXRef.current;
+    setPosition(dragStartPosRef.current + delta);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    setAutoScrollPaused(false);
   };
 
-  // ========== ARROW BUTTONS ==========
-  const scrollLeft = () => {
-    if (trackRef.current) {
-      trackRef.current.scrollBy({ left: -cardWidth - 50, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (trackRef.current) {
-      trackRef.current.scrollBy({ left: cardWidth + 50, behavior: "smooth" });
-    }
+  // ========== ARROW BUTTONS (Below Carousel, Apple-style) ==========
+  const scrollByCard = (direction: "left" | "right") => {
+    const moveBy = direction === "left" ? cardWidth + 50 : -(cardWidth + 50);
+    setPosition((prev) => prev + moveBy);
+    // Pause briefly for manual interaction
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 1500);
   };
 
   if (!products || products.length === 0) {
-    return <div className="flex items-center justify-center h-32 bg-transparent"><p className="text-sm text-white/40">No products available</p></div>;
+    return (
+      <div className="flex items-center justify-center h-32 bg-transparent">
+        <p className="text-sm text-white/40">No products available</p>
+      </div>
+    );
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full flex items-center justify-center overflow-hidden py-6"
-      style={{ perspective: "1200px", height: isDesktop ? '650px' : '500px' }}
-    >
-      {/* Arrow Buttons */}
-      <button
-        onClick={scrollLeft}
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/50 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-luxury-brown transition-all"
-        aria-label="Scroll left"
+    <div className="relative w-full bg-transparent">
+      {/* Carousel Container */}
+      <div
+        ref={containerRef}
+        className="relative w-full overflow-hidden"
+        style={{ height: isDesktop ? "650px" : "500px", perspective: "1200px" }}
       >
-        <ChevronLeft size={24} />
-      </button>
-      <button
-        onClick={scrollRight}
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/50 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-luxury-brown transition-all"
-        aria-label="Scroll right"
-      >
-        <ChevronRight size={24} />
-      </button>
+        {/* Background Letters */}
+        <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
+          <div className="relative w-full h-full">
+            <div className="absolute top-8 left-10 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">S</div>
+            <div className="absolute top-8 right-10 text-3xl md:text-5xl font-serif font-light text-white/10 select-none">(O)</div>
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">F</div>
+            <div className="absolute bottom-8 right-10 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">IA</div>
+          </div>
+        </div>
 
-      {/* Background Letters */}
-      <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
-        <div className="relative w-full h-full">
-          <div className="absolute top-8 left-10 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">S</div>
-          <div className="absolute top-8 right-10 text-3xl md:text-5xl font-serif font-light text-white/10 select-none">(O)</div>
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">F</div>
-          <div className="absolute bottom-8 right-10 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">IA</div>
+        {/* Track (Uses transform for maximum performance) */}
+        <div
+          ref={trackRef}
+          className="flex items-center absolute left-0 will-change-transform"
+          style={{
+            transform: `translate3d(${position}px, 0, 0)`,
+            transition: isDragging || isPaused ? "none" : "transform 0.05s linear",
+            gap: isDesktop ? "50px" : "30px",
+            paddingLeft: viewportWidth / 2 - cardWidth / 2,
+            paddingRight: viewportWidth / 2 - cardWidth / 2,
+            cursor: isDragging ? "grabbing" : "grab",
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
+        >
+          {loopProducts.map((product, index) => {
+            const imageUrl = getImageUrl(product);
+
+            return (
+              <div
+                key={`${product.id}-${index}`}
+                className="flex-shrink-0 cursor-pointer"
+                style={{
+                  width: cardWidth,
+                  height: isDesktop ? 550 : 400,
+                  transition: "transform 0.3s ease, opacity 0.3s ease",
+                  transformStyle: "preserve-3d",
+                  willChange: "transform",
+                }}
+                onClick={() => onProductClick(product)}
+              >
+                {/* Card with Fully Rounded Corners */}
+                <div className="relative w-full h-full rounded-[32px] overflow-hidden">
+                  <img
+                    src={imageUrl}
+                    alt={product.name}
+                    draggable={false}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div
-        ref={trackRef}
-        className="flex items-center gap-8 overflow-x-auto w-full h-full"
-        style={{
-          scrollBehavior: isDragging ? "auto" : "smooth",
-          WebkitOverflowScrolling: "touch",
-          overflowY: "hidden",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          cursor: isDragging ? "grabbing" : "grab",
-          paddingLeft: viewportWidth / 2 - cardWidth / 2,
-          paddingRight: viewportWidth / 2 - cardWidth / 2,
-        }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {loopProducts.map((product, index) => {
-          const imageUrl = getImageUrl(product);
-
-          return (
-            <div
-              key={`${product.id}-${index}`}
-              className="carousel-card flex-shrink-0 cursor-pointer"
-              style={{
-                width: cardWidth,
-                height: isDesktop ? 550 : 400,
-                transition: "transform 0.3s ease, opacity 0.3s ease",
-                transformStyle: "preserve-3d",
-                willChange: "transform, opacity",
-              }}
-              onClick={() => onProductClick(product)}
-            >
-              <div className="relative w-full h-full rounded-[32px] overflow-hidden">
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  draggable={false}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] tracking-[0.2em] text-white/60 animate-pulse pointer-events-none hidden md:block">
-        ← scroll →
+      {/* ========== APPLE-STYLE ARROW BUTTONS (Below Carousel) ========== */}
+      <div className="flex items-center justify-center gap-6 mt-6 pb-2">
+        <button
+          onClick={() => scrollByCard("left")}
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          onClick={() => scrollByCard("right")}
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
+          aria-label="Scroll right"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
     </div>
   );
