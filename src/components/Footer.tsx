@@ -9,7 +9,7 @@ interface FooterProps {
   socialMedia?: SocialMedia[];
 }
 
-// Helper function to extract the src URL from iframe code
+// Helper function to extract the src URL from iframe code or embed links
 function getEmbedUrl(location: string): string {
   if (!location) return "";
 
@@ -30,6 +30,9 @@ function getEmbedUrl(location: string): string {
 
 export default function Footer({ shopInfo, socialMedia }: FooterProps) {
   const mapUrl = shopInfo?.location ? getEmbedUrl(shopInfo.location) : "";
+  
+  // Only show the text if it's NOT a URL (hide the long link!)
+  const showLocationText = shopInfo?.location && !shopInfo.location.startsWith("http");
 
   return (
     <footer className="bg-transparent border-t border-white/10 py-16"> {/* TRANSPARENT BACKGROUND */}
@@ -116,11 +119,11 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
           <div>
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Find Us</h3>
             <div className="space-y-4">
-              {/* Show Location text */}
-              {shopInfo?.location && (
+              {/* Show Location text ONLY if it's not a URL */}
+              {showLocationText && (
                 <div className="flex items-start gap-3">
                   <MapPin size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
-                  <p className="font-body text-sm text-cream-200/80 leading-relaxed break-all">
+                  <p className="font-body text-sm text-cream-200/80 leading-relaxed">
                     {shopInfo.location}
                   </p>
                 </div>
