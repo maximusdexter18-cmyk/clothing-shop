@@ -117,19 +117,27 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [productsRes, brandsRes, shopRes, socialRes, feedbackRes] = await Promise.all([
+      // Fetch main data
+      const [productsRes, brandsRes, shopRes, socialRes] = await Promise.all([
         supabase.from("products").select("*, brand:brands(*), images:product_images(*), sizes:product_sizes(*)").order("created_at", { ascending: false }),
         supabase.from("brands").select("*").order("name"),
         supabase.from("shop_info").select("*").limit(1).single(),
         supabase.from("social_media").select("*").order("display_order"),
-        supabase.from("site_feedback").select("*").order("created_at", { ascending: false }),
       ]);
 
+      // Fetch category images
       const [catMenRes, catWomenRes, catKidsRes] = await Promise.all([
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_men").limit(1).maybeSingle(),
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_women").limit(1).maybeSingle(),
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_kids").limit(1).maybeSingle(),
       ]);
+      
+      // Fetch Feedback SEPARATELY so it NEVER crashes the entire fetch!
+      const feedbackRes = await supabase
+        .from("site_feedback")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       setProducts(productsRes.data || []);
       setBrands(brandsRes.data || []);
       setShopInfo(shopRes.data);

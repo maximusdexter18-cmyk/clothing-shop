@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Feedback message is required" }, { status: 400 });
     }
 
-    // Optional fields (no longer required)
     const name = body.name || "Anonymous";
     const email = body.email || "Not provided";
 
@@ -21,6 +20,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      console.error("Supabase error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
