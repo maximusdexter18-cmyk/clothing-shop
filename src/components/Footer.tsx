@@ -11,7 +11,7 @@ interface FooterProps {
 
 export default function Footer({ shopInfo, socialMedia }: FooterProps) {
   return (
-    <footer className="bg-luxury-darkBrown text-cream-100 py-16 border-t border-luxury-gold/20">
+    <footer className="bg-transparent border-t border-white/10 py-16"> {/* TRANSPARENT BACKGROUND */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           
@@ -34,7 +34,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                   href={social.url || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-luxury-brown text-cream-100 flex items-center justify-center hover:bg-luxury-gold hover:text-luxury-brown transition-all"
+                  className="w-10 h-10 rounded-full bg-white/10 text-cream-100 flex items-center justify-center hover:bg-luxury-gold hover:text-luxury-brown transition-all backdrop-blur-md border border-white/10"
                   aria-label={social.platform}
                 >
                   {social.platform === "instagram" && <Instagram size={18} />}
@@ -117,7 +117,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
-                  <div className="w-full h-full bg-luxury-brown flex items-center justify-center text-cream-200/40 text-xs text-center px-4">
+                  <div className="w-full h-full bg-white/5 flex items-center justify-center text-cream-200/40 text-xs text-center px-4">
                     Map preview will appear here once you add a location in Admin.
                   </div>
                 )}
@@ -127,7 +127,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-luxury-gold/20 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t border-white/10 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-body text-xs text-cream-200/40">
             © {new Date().getFullYear()} {shopInfo?.shop_name || "OG WEAR"}. All rights reserved.
           </p>
