@@ -2,17 +2,22 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingBag } from "lucide-react";
 import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ProductCard from "@/components/ProductCard";
+import ProductPopup from "@/components/ProductPopup";
 import { supabase } from "@/lib/supabase";
 import { Product, ShopInfo, SocialMedia, CATEGORIES, MAJOR_BRANDS } from "@/lib/types";
-import { X, SlidersHorizontal } from "lucide-react";
+import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 
 export default function CategoryPage() {
   const { gender: rawGender } = useParams();
   const gender = Array.isArray(rawGender) ? rawGender[0] : rawGender;
+  const { addToCart, items, removeFromCartByProductId } = useCart();
+  const { user } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null);
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
@@ -28,6 +33,11 @@ export default function CategoryPage() {
     brand: true,
     availability: true,
   });
+
+  // Product Popup State
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | undefined>();
+  const [addedSuccessId, setAddedSuccessId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -83,11 +93,6 @@ export default function CategoryPage() {
     return filtered;
   }, [products, selectedCategory, selectedBrand, availability, sortBy]);
 
-  const activeFilterCount = 
-    (selectedCategory ? 1 : 0) + 
-    (selectedBrand ? 1 : 0) + 
-    (availability !== "all" ? 1 : 0);
-
   const clearFilters = () => {
     setSelectedCategory(null);
     setSelectedBrand(null);
@@ -95,16 +100,10 @@ export default function CategoryPage() {
     setSortBy("newest");
   };
 
-  const removeFilter = (type: string) => {
-    if (type === "category") setSelectedCategory(null);
-    if (type === "brand") setSelectedBrand(null);
-    if (type === "availability") setAvailability("all");
-  };
-
   return (
     <>
       <Navigation shopInfo={shopInfo} showBack />
-      <main className="min-h-screen bg-transparent pt-24">
+      <main className="min-h-screen bg-transparent pt-32">
         
         {/* Header */}
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center mb-4">
@@ -123,18 +122,18 @@ export default function CategoryPage() {
             <div className="flex flex-wrap items-center gap-2 justify-center">
               <span className="font-body text-xs text-cream-100/60 uppercase tracking-wider">Filters:</span>
               {selectedCategory && (
-                <button onClick={() => removeFilter("category")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
-                  {selectedCategory} <X size={14} />
+                <button onClick={() => setSelectedCategory(null)} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {selectedCategory} <span className="text-xs">×</span>
                 </button>
               )}
               {selectedBrand && (
-                <button onClick={() => removeFilter("brand")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
-                  {selectedBrand} <X size={14} />
+                <button onClick={() => setSelectedBrand(null)} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {selectedBrand} <span className="text-xs">×</span>
                 </button>
               )}
               {availability !== "all" && (
-                <button onClick={() => removeFilter("availability")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
-                  {availability === "in-stock" ? "In Stock" : "Out of Stock"} <X size={14} />
+                <button onClick={() => setAvailability("all")} className="flex items-center gap-1 px-3 py-1 bg-luxury-gold text-luxury-brown rounded-full text-xs font-bold hover:bg-white/80 transition-all">
+                  {availability === "in-stock" ? "In Stock" : "Out of Stock"} <span className="text-xs">×</span>
                 </button>
               )}
               <button onClick={clearFilters} className="text-xs font-body text-cream-100/60 underline underline-offset-2 hover:text-luxury-gold ml-2">
@@ -144,25 +143,18 @@ export default function CategoryPage() {
           </div>
         )}
 
-        {/* ========== AMAZON-STYLE CHIP BAR (WORKS ON MOBILE + DESKTOP) ========== */}
+        {/* Amazon-style Chip Bar */}
         <div className="sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 py-3 px-4">
           <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto hide-scrollbar">
-            
-            {/* FILTER CHIP */}
             <button
               onClick={() => setShowFilters(true)}
               className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-luxury-gold text-luxury-gold bg-black/40 font-body text-xs font-bold uppercase tracking-wider hover:bg-luxury-gold hover:text-luxury-brown transition-all"
             >
-              <SlidersHorizontal size={14} />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
               Filters
-              {activeFilterCount > 0 && (
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-luxury-gold text-luxury-brown text-[10px] font-bold">
-                  {activeFilterCount}
-                </span>
-              )}
+              {(selectedBrand || availability !== "all" || selectedCategory) && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
             </button>
 
-            {/* SORT CHIP (Always visible) */}
             <div className="flex-shrink-0 relative">
               <select 
                 value={sortBy} 
@@ -176,38 +168,25 @@ export default function CategoryPage() {
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60 text-xs">▼</span>
             </div>
 
-            {/* CATEGORY CHIPS (Now Visible on Desktop too!) */}
-            {categories.length > 0 && (
-              <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {categories.map((cat) => (
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  key={cat}
+                  onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
                   className={`px-4 py-2 rounded-full border-2 font-body text-xs font-bold uppercase tracking-wider transition-all ${
-                    !selectedCategory 
+                    selectedCategory === cat 
                       ? "border-luxury-gold text-luxury-gold bg-black/40" 
                       : "border-white/20 text-white/60 bg-black/40 hover:border-white/40"
                   }`}
                 >
-                  All
+                  {cat}
                 </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-full border-2 font-body text-xs font-bold uppercase tracking-wider transition-all ${
-                      selectedCategory === cat 
-                        ? "border-luxury-gold text-luxury-gold bg-black/40" 
-                        : "border-white/20 text-white/60 bg-black/40 hover:border-white/40"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* ========== FILTER SIDEBAR ========== */}
+        {/* Filter Sidebar */}
         <AnimatePresence>
           {showFilters && (
             <>
@@ -228,7 +207,7 @@ export default function CategoryPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="font-display text-xl font-bold text-cream-100">Refine Results</h4>
                   <button onClick={() => setShowFilters(false)} className="p-2 text-cream-100 hover:text-luxury-gold">
-                    <X size={24} />
+                    <span className="text-2xl">×</span>
                   </button>
                 </div>
 
@@ -304,7 +283,7 @@ export default function CategoryPage() {
 
         {/* Products Grid */}
         <section className="py-12">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {loading ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {Array(8).fill(null).map((_, i) => (
@@ -322,15 +301,120 @@ export default function CategoryPage() {
                 <button onClick={clearFilters} className="btn-luxury">Clear Filters</button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {filteredProducts.map((product, i) => (
-                  <ProductCard key={product.id} product={product} index={i} variant="grid" />
-                ))}
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+                {filteredProducts.map((product, i) => {
+                  const smallImages = product.images?.filter((img) => img.image_type === "small") || [];
+                  const smallImage = smallImages[0]?.image_url || product.images?.find((img) => img.is_primary)?.image_url || product.images?.[0]?.image_url || "/placeholder.png";
+                  const availableSizes = product.sizes?.filter((s) => s.is_available) || [];
+                  const inStock = availableSizes.length > 0;
+                  const price = product.is_discounted && product.discount_price ? product.discount_price : product.original_price;
+                  const originalPrice = product.original_price;
+
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: i * 0.05 }}
+                      className="cursor-pointer group"
+                      onClick={() => {
+                        const fb = product.images?.filter((img) => img.image_type === "full-body")[0]?.image_url || product.images?.find((img) => img.is_primary)?.image_url || product.images?.[0]?.image_url;
+                        setSelectedImage(fb);
+                        setSelectedProduct(product);
+                      }}
+                    >
+                      <div className="bg-transparent rounded-xl shadow-lg overflow-hidden border border-cream-200/20 hover:shadow-2xl transition-shadow duration-300">
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          <img src={smallImage} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <div className="absolute top-3 left-3 hidden md:block">
+                            <span className={`font-body text-[10px] font-semibold px-3 py-1 rounded-full shadow bg-white/95 ${inStock ? "text-emerald-600" : "text-red-500"}`}>
+                              {inStock ? "IN STOCK" : "OUT OF STOCK"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4">
+                          <p className="font-body text-[10px] uppercase tracking-[0.15em] text-cream-200/70 mb-1">
+                            {product.brand?.name || ""}
+                          </p>
+                          <h3 className="font-display text-sm md:text-base font-semibold text-cream-100 truncate mb-3">
+                            {product.name}
+                          </h3>
+
+                          <div className="flex items-center justify-between mb-3 gap-2">
+                            <div>
+                              {product.is_discounted && product.discount_price ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-body text-xs text-cream-200/60 line-through">₹{originalPrice.toFixed(2)}</span>
+                                  <span className="font-body text-base font-bold text-luxury-gold">₹{price.toFixed(2)}</span>
+                                </div>
+                              ) : (
+                                <span className="font-body text-base font-bold text-cream-100">₹{price.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {(() => {
+                            const isItemInBag = items.some((item) => item.product.id === product.id);
+                            const isJustAdded = addedSuccessId === product.id;
+                            return (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!user) {
+                                    addToCart(product, null, smallImage);
+                                    return;
+                                  }
+                                  if (isItemInBag) {
+                                    removeFromCartByProductId(product.id);
+                                    setAddedSuccessId(null);
+                                  } else if (inStock) {
+                                    const defaultSize = availableSizes[0]?.size || null;
+                                    addToCart(product, defaultSize, smallImage);
+                                    setAddedSuccessId(product.id);
+                                    setTimeout(() => setAddedSuccessId(null), 2500);
+                                  }
+                                }}
+                                disabled={!inStock}
+                                className={`mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-full font-body text-[10px] font-bold tracking-wider uppercase transition-all shadow-lg ${
+                                  !inStock
+                                    ? "bg-white/10 text-cream-200/40 cursor-not-allowed"
+                                    : user && (isItemInBag || isJustAdded)
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                    : "bg-luxury-gold text-luxury-brown hover:bg-cream-100"
+                                }`}
+                              >
+                                <ShoppingBag size={12} />
+                                {!inStock ? "Sold Out" : user && (isItemInBag || isJustAdded) ? "✓ Added" : "Add to Bag"}
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </div>
         </section>
       </main>
+
+      {/* Product Popup - THE EXACT SAME AS HOMEPAGE */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <ProductPopup
+            product={selectedProduct}
+            centerImage={selectedImage}
+            onClose={() => {
+              setSelectedProduct(null);
+              setSelectedImage(undefined);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <Footer shopInfo={shopInfo} socialMedia={socialMedia} />
     </>
   );
