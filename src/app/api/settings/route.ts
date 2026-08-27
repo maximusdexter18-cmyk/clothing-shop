@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     if (action === "shop-info") {
-      const { id, shop_name, tagline, email, phone, address, about_us, map_embed_url, location } = body;
+      const { id, shop_name, tagline, email, phone, address, about_us, map_embed_url, location, review_link } = body;
       const { error } = await supabaseAdmin.from("shop_info").upsert({
         id,
         shop_name,
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
         about_us,
         map_embed_url,
         location,
+        review_link,
       });
       if (error) throw error;
       return NextResponse.json({ success: true });

@@ -213,18 +213,18 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                 </div>
               )}
 
-              {/* Google Review Link */}
-              {reviewLink && (
-                <a
-                  href={reviewLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm font-body text-cream-200/80 hover:text-luxury-gold transition-colors"
-                >
-                  <Star size={18} className="text-luxury-gold flex-shrink-0" />
-                  <span>Review us on Google Maps</span>
-                </a>
-              )}
+             {/* Google Review Link - Only show if it's a valid review link, NOT an embed URL */}
+{shopInfo?.review_link && !shopInfo.review_link.includes("/maps/embed") && (
+  <a
+    href={shopInfo.review_link}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex items-center gap-3 text-sm font-body text-cream-200/80 hover:text-luxury-gold transition-colors"
+  >
+    <Star size={18} className="text-luxury-gold flex-shrink-0" />
+    <span>Review us on Google Maps</span>
+  </a>
+)}
               
               {/* Embedded Google Map */}
               <div className="w-full h-40 rounded-lg overflow-hidden border border-white/10 shadow-lg">

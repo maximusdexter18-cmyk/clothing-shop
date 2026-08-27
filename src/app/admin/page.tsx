@@ -150,7 +150,7 @@ export default function AdminPage() {
         setShopAddress(shopRes.data.address || "");
         setShopAbout(shopRes.data.about_us || "");
         setShopLocation(shopRes.data.location || "");
-        setShopReviewLink(shopRes.data.review_link || "");
+        setShopReviewLink(shopRes.data.review_link || ""); // <--- ADDED
       }
 
       const srRes = await supabase

@@ -109,7 +109,9 @@ export interface ShopInfo {
   created_at: string;
   updated_at: string;
   location?: string;
+  review_link?: string;   // <--- ADD THIS
 }
+
 
 export interface FilterOption {
   id: string;
