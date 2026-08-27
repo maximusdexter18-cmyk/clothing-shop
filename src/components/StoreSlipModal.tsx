@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { X, Download, Share2, ChevronLeft, ChevronRight, Check, FileText, Tag } from "lucide-react";
 import { CartItem } from "@/lib/cart-context";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 
 interface StoreSlipModalProps {
@@ -20,7 +20,20 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const hiddenPagesRef = useRef<HTMLDivElement>(null);
-  const totalPages = items.length;
+
+  // On-screen browsing (Prev/Next Item) stays one product at a time.
+  const totalItems = items.length;
+
+  // PDF pages now hold TWO products each, so the actual PDF page count is half that
+  // (rounded up, so an odd item count still gets a page for the leftover one).
+  const pdfPageGroups = useMemo(() => {
+    const groups: CartItem[][] = [];
+    for (let i = 0; i < items.length; i += 2) {
+      groups.push(items.slice(i, i + 2));
+    }
+    return groups;
+  }, [items]);
+  const pdfPageCount = pdfPageGroups.length;
 
   useEffect(() => {
     setMounted(true);
@@ -49,9 +62,8 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      for (let i = 0; i < items.length; i++) {
+      for (let i = 0; i < pdfPageGroups.length; i++) {
         const pageEl = hiddenPagesRef.current.children[i] as HTMLElement;
         if (!pageEl) continue;
 
@@ -61,10 +73,17 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
           allowTaint: true,
           backgroundColor: "#FAF7F2",
           logging: false,
+          onclone: (clonedDoc) => {
+            const headings = clonedDoc.querySelectorAll("h1, h2, h3, h4, p, span, img, div");
+            headings.forEach((el) => {
+              (el as HTMLElement).style.overflow = "visible";
+              (el as HTMLElement).style.lineHeight = "1.4";
+            });
+          },
         });
 
         const imgData = canvas.toDataURL("image/png");
-        const imgWidth = pdfWidth - 20; // 10mm margins on each side
+        const imgWidth = pdfWidth - 20;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
         if (i > 0) pdf.addPage();
@@ -150,7 +169,6 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
         onClick={(e) => e.stopPropagation()}
         className="relative bg-cream-50 rounded-2xl w-full max-w-md shadow-2xl border border-cream-200 p-4 sm:p-5 flex flex-col items-center max-h-[92vh] overflow-y-auto"
       >
-        {/* Header bar */}
         <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-cream-200">
           <div className="flex items-center gap-2">
             <FileText className="text-luxury-gold w-5 h-5" />
@@ -166,8 +184,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
           </button>
         </div>
 
-        {/* Page Switcher Navigation */}
-        {totalPages > 1 && (
+        {totalItems > 1 && (
           <div className="flex items-center justify-between w-full mb-3 px-1">
             <button
               onClick={() => setActivePageIndex((prev) => Math.max(0, prev - 1))}
@@ -177,11 +194,11 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
               <ChevronLeft size={16} /> Prev Item
             </button>
             <span className="font-body text-xs font-bold text-luxury-brown/80 bg-cream-200 px-3 py-1 rounded-full">
-              Item {activePageIndex + 1} of {totalPages}
+              Item {activePageIndex + 1} of {totalItems}
             </span>
             <button
-              onClick={() => setActivePageIndex((prev) => Math.min(totalPages - 1, prev + 1))}
-              disabled={activePageIndex === totalPages - 1}
+              onClick={() => setActivePageIndex((prev) => Math.min(totalItems - 1, prev + 1))}
+              disabled={activePageIndex === totalItems - 1}
               className="flex items-center gap-1 text-xs font-bold text-luxury-brown disabled:opacity-30 disabled:cursor-not-allowed hover:text-luxury-gold transition-colors"
             >
               Next Item <ChevronRight size={16} />
@@ -189,12 +206,10 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
           </div>
         )}
 
-        {/* VISIBLE PAGE PREVIEW */}
         <div className="w-full bg-[#FAF7F2] border border-luxury-brown/20 rounded-xl p-3 shadow-lg select-none relative overflow-hidden flex flex-col gap-3">
-          {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId)}
+          {renderProductSlipCard(activeItem, activePageIndex, totalItems, dateString, refId)}
         </div>
 
-        {/* Action Buttons: Download PDF & Share PDF */}
         <div className="w-full flex gap-3 mt-4">
           <button
             onClick={handleDownloadPDF}
@@ -207,11 +222,10 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
               </>
             ) : (
               <>
-                <Download size={16} /> Download PDF ({totalPages} {totalPages === 1 ? "Page" : "Pages"})
+                <Download size={16} /> Download PDF ({pdfPageCount} {pdfPageCount === 1 ? "Page" : "Pages"})
               </>
             )}
           </button>
-
           <button
             onClick={handleSharePDF}
             disabled={downloading}
@@ -230,15 +244,31 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
         </div>
       </motion.div>
 
-      {/* HIDDEN PAGES CONTAINER (Moved OUTSIDE the overflow hidden container & NOT opacity-0) */}
+      {/* HIDDEN PAGES CONTAINER — two products stacked per A4 page now */}
       <div style={{ position: "absolute", top: 0, left: "-9999px", width: "210mm", pointerEvents: "none" }}>
         <div ref={hiddenPagesRef}>
-          {items.map((item, idx) => (
+          {pdfPageGroups.map((group, pageIdx) => (
             <div
-              key={`pdf-page-${item.product.id}-${idx}`}
-              style={{ width: "210mm", minHeight: "297mm", padding: "10mm", boxSizing: "border-box", backgroundColor: "#FAF7F2" }}
+              key={`pdf-page-${pageIdx}`}
+              style={{
+                width: "210mm",
+                minHeight: "297mm",
+                padding: "10mm",
+                boxSizing: "border-box",
+                backgroundColor: "#FAF7F2",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10mm",
+              }}
             >
-              {renderProductSlipCard(item, idx, totalPages, dateString, refId, true)}
+              {group.map((item, slotIdx) => {
+                const globalIndex = pageIdx * 2 + slotIdx;
+                return (
+                  <div key={`pdf-card-${item.product.id}-${globalIndex}`} style={{ flex: 1, minHeight: 0 }}>
+                    {renderProductSlipCard(item, globalIndex, totalItems, dateString, refId, true)}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -247,7 +277,6 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   );
 }
 
-// Render helper: 50% Image Left, 50% Details Right
 function renderProductSlipCard(
   item: CartItem,
   pageIdx: number,
@@ -272,110 +301,97 @@ function renderProductSlipCard(
 
   const selectedSize = item.size || "Standard";
 
-  // ========== PDF LAYOUT (Split 50/50, No Mark as Found) ==========
   if (isPdfExport) {
     return (
-      <div className="w-full h-full flex flex-col bg-[#FAF7F2] text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between p-4 border-b border-[#3D2B1F]/10">
-          <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#3D2B1F]">OG WEAR • CURATED SLIP</span>
-          <span className="font-mono text-xs text-[#3D2B1F]/60">{dateString} • {refId}</span>
+      <div style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#FAF7F2",
+        border: "2px solid rgba(61,43,31,0.2)",
+        borderRadius: "16px",
+        padding: "15px",
+        boxSizing: "border-box",
+        color: "#3D2B1F",
+        fontFamily: "Arial, sans-serif",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: "10px", borderBottom: "1px solid rgba(61,43,31,0.1)", fontWeight: "bold", fontSize: "11px" }}>
+          <span>OG WEAR • CURATED SLIP</span>
+          <span style={{ opacity: 0.6 }}>{dateString} • {refId}</span>
         </div>
 
-        {/* 50/50 Split Content */}
-        <div className="flex flex-1">
-          
-          {/* LEFT HALF - IMAGE */}
-          <div className="w-1/2 p-4 flex items-center justify-center bg-white border-r border-[#3D2B1F]/10">
-            <div className="relative w-full h-full flex items-center justify-center">
+        <div style={{ display: "flex", flex: 1, minHeight: 0, marginTop: "10px", marginBottom: "10px" }}>
+          <div style={{
+            width: "50%",
+            backgroundColor: "white",
+            borderRight: "1px solid rgba(61,43,31,0.1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "12px",
+          }}>
+            <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img
                 src={fullBodyImg}
                 alt={item.product.name}
-                className="max-h-full max-w-full object-contain mix-blend-multiply"
                 crossOrigin="anonymous"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  mixBlendMode: "multiply",
+                }}
               />
-              
               {isDiscounted && (
-                <div className="absolute top-2 right-2 bg-[#3D2B1F] text-[#FAF7F2] text-xs font-extrabold px-3 py-1 rounded-full rotate-3 shadow">
+                <div style={{ position: "absolute", top: "8px", right: "8px", backgroundColor: "#3D2B1F", color: "#FAF7F2", fontWeight: "bold", fontSize: "11px", padding: "4px 9px", borderRadius: "50px", transform: "rotate(3deg)" }}>
                   -{discountPercent}%
                 </div>
               )}
             </div>
           </div>
 
-          {/* RIGHT HALF - DETAILS */}
-          <div className="w-1/2 p-6 flex flex-col justify-center space-y-6">
-            <div>
+          <div style={{ width: "50%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "18px" }}>
+            <div style={{ marginBottom: "14px" }}>
               {item.product.brand?.name && (
-                <span className="font-sans text-[10px] font-bold text-[#C5A55A] uppercase tracking-[0.2em] block">
-                  {item.product.brand.name}
-                </span>
+                <div style={{ color: "#C5A55A", fontSize: "9px", fontWeight: "bold", letterSpacing: "2px", textTransform: "uppercase" }}>{item.product.brand.name}</div>
               )}
-              <h2 className="font-serif text-3xl font-bold leading-tight text-[#3D2B1F] mt-2">
-                {item.product.name}
-              </h2>
+              <div style={{ fontSize: "20px", fontWeight: "bold", marginTop: "4px", lineHeight: "1.2" }}>{item.product.name}</div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center border-b border-[#3D2B1F]/10 pb-2">
-                <span className="text-xs font-bold uppercase">Size Selected</span>
-                <span className="font-sans text-xl font-extrabold text-[#C5A55A]">{selectedSize}</span>
-              </div>
-              
-              <div className="flex justify-between items-center border-b border-[#3D2B1F]/10 pb-2">
-                <span className="text-xs font-bold uppercase">Quantity</span>
-                <span className="font-sans text-xl font-extrabold">{item.quantity}</span>
-              </div>
-
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-xs font-bold uppercase">Final Price</span>
-                <div className="text-right">
-                  <div className="font-serif text-2xl font-extrabold text-[#3D2B1F]">
-                    ₹{finalPrice.toFixed(0)}
-                  </div>
-                  {isDiscounted && (
-                    <span className="text-xs text-[#3D2B1F]/40 line-through block">
-                      ₹{originalPrice.toFixed(0)}
-                    </span>
-                  )}
-                </div>
-              </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(61,43,31,0.1)", fontSize: "12px" }}>
+              <span style={{ fontWeight: "bold" }}>Size Selected</span>
+              <span style={{ color: "#C5A55A", fontWeight: "bold", fontSize: "16px" }}>{selectedSize}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(61,43,31,0.1)", fontSize: "12px" }}>
+              <span style={{ fontWeight: "bold" }}>Quantity</span>
+              <span style={{ fontWeight: "bold", fontSize: "16px" }}>{item.quantity}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0 0", fontSize: "12px" }}>
+              <span style={{ fontWeight: "bold" }}>Final Price</span>
+              <span style={{ fontSize: "18px", fontWeight: "bold" }}>₹{finalPrice.toFixed(0)}</span>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar - Just a small note, NO button */}
-        <div className="p-3 border-t border-[#3D2B1F]/10 flex items-center justify-between">
-          <span className="text-[10px] font-bold text-[#3D2B1F]/40">
-            Item {pageIdx + 1} of {totalPages}
-          </span>
-          <span className="text-[10px] font-bold text-[#3D2B1F]/40">
-            Picked for easy item identification
-          </span>
+        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid rgba(61,43,31,0.1)", fontSize: "9px", fontWeight: "bold", opacity: 0.4 }}>
+          <span>Item {pageIdx + 1} of {totalPages}</span>
+          <span>Picked for easy item identification</span>
         </div>
       </div>
     );
   }
 
-  // ========== MODAL PREVIEW (Split 50/50, No Mark as Found) ==========
   return (
     <div className="flex flex-col space-y-3">
-      {/* Top Bar */}
       <div className="flex items-center justify-between border-b border-luxury-brown/10 pb-2">
         <span className="font-mono text-[10px] font-bold tracking-[0.15em] text-luxury-brown">OG WEAR • CURATED SLIP</span>
         <span className="font-mono text-[9px] text-luxury-brown/60">{dateString} • {refId}</span>
       </div>
 
-      {/* 50/50 Content */}
       <div className="flex flex-row gap-3">
-        {/* Left: Image */}
         <div className="w-1/2 bg-white rounded-lg border border-cream-300 p-2 flex items-center justify-center relative" style={{ minHeight: "280px" }}>
-          <img
-            src={fullBodyImg}
-            alt={item.product.name}
-            className="max-h-full max-w-full object-contain mix-blend-multiply"
-            crossOrigin="anonymous"
-          />
+          <img src={fullBodyImg} alt={item.product.name} crossOrigin="anonymous" className="max-h-full max-w-full object-contain mix-blend-multiply" />
           {isDiscounted && (
             <div className="absolute top-2 right-2 bg-luxury-brown text-cream-100 text-[10px] font-extrabold px-2 py-1 rounded-full rotate-3 shadow">
               -{discountPercent}%
@@ -383,39 +399,27 @@ function renderProductSlipCard(
           )}
         </div>
 
-        {/* Right: Details */}
         <div className="w-1/2 flex flex-col justify-center space-y-3">
           <div>
             {item.product.brand?.name && (
-              <span className="font-body text-[10px] font-bold text-luxury-gold uppercase tracking-[0.15em] block">
-                {item.product.brand.name}
-              </span>
+              <span className="font-body text-[10px] font-bold text-luxury-gold uppercase tracking-[0.15em] block">{item.product.brand.name}</span>
             )}
-            <h3 className="font-display text-xl font-bold text-luxury-brown mt-1">
-              {item.product.name}
-            </h3>
+            <h3 className="font-display text-xl font-bold text-luxury-brown mt-1">{item.product.name}</h3>
           </div>
-
           <div className="flex justify-between items-center border-b border-cream-200 pb-2">
             <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Size</span>
             <span className="font-body text-lg font-extrabold text-luxury-gold">{selectedSize}</span>
           </div>
-
           <div className="flex justify-between items-center border-b border-cream-200 pb-2">
             <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Qty</span>
             <span className="font-body text-lg font-extrabold text-luxury-brown">{item.quantity}</span>
           </div>
-
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold uppercase text-luxury-brown/60">Price</span>
             <div className="text-right">
-              <span className="font-display text-xl font-extrabold text-luxury-brown block">
-                ₹{finalPrice.toFixed(0)}
-              </span>
+              <span className="font-display text-xl font-extrabold text-luxury-brown block">₹{finalPrice.toFixed(0)}</span>
               {isDiscounted && (
-                <span className="font-body text-[10px] text-luxury-brown/40 line-through">
-                  ₹{originalPrice.toFixed(0)}
-                </span>
+                <span className="font-body text-[10px] text-luxury-brown/40 line-through">₹{originalPrice.toFixed(0)}</span>
               )}
             </div>
           </div>

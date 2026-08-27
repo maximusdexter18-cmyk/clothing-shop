@@ -16,16 +16,16 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const [position, setPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  
+
   const [cardWidth, setCardWidth] = useState(450);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
 
-  const velocityRef = useRef(0);
   const dragStartXRef = useRef(0);
   const dragStartPosRef = useRef(0);
   const rafRef = useRef<number>();
   const productsRef = useRef(products);
+  const hasInitializedPosition = useRef(false);
 
   // Keep products ref updated
   useEffect(() => {
@@ -44,6 +44,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     );
   };
 
+  // Single source of truth for gap, used everywhere so desktop/mobile never drift apart
+  const gap = isDesktop ? 50 : 30;
+  const step = cardWidth + gap;
+  const setWidth = step * productsRef.current.length;
+
   // Update dimensions
   useEffect(() => {
     const updateMetrics = () => {
@@ -57,43 +62,36 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener("resize", updateMetrics);
   }, []);
 
-  // ========== INFINITE LOOP LOGIC (The key fix!) ==========
-  const normalizePosition = useCallback((pos: number) => {
-    const track = trackRef.current;
-    if (!track) return pos;
-
-    // Calculate the width of ONE full set of products (loop size)
-    const setWidth = (cardWidth + 50) * productsRef.current.length;
-
-    // Wrap the position into the middle set's range
-    // We want it to loop from 0 to setWidth, but always stay within the middle
-    if (Math.abs(pos) >= setWidth) {
-      // If we go too far right, wrap to start of the next set
-      return pos % setWidth;
+  // Start already one full set deep into the loop, so there's always a
+  // full "previous" set sitting to the left from the very first frame —
+  // this is what makes it look circular immediately instead of only after scrolling.
+  useEffect(() => {
+    if (!hasInitializedPosition.current && viewportWidth > 0 && products.length > 0) {
+      const initialStep = cardWidth + (isDesktop ? 50 : 30);
+      setPosition(-(initialStep * products.length));
+      hasInitializedPosition.current = true;
     }
-    
-    return pos;
-  }, [cardWidth]);
+  }, [viewportWidth, cardWidth, isDesktop, products.length]);
 
   // ========== AUTO-SCROLL (60fps) ==========
   const animate = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-
     if (!isDragging && !isPaused) {
-      const baseSpeed = isDesktop ? 0.8 : 0.5; // Slow glide
+      const baseSpeed = isDesktop ? 0.8 : 0.5;
       setPosition((prev) => {
+        const currentGap = isDesktop ? 50 : 30;
+        const currentStep = cardWidth + currentGap;
+        const currentSetWidth = currentStep * productsRef.current.length;
         let next = prev - baseSpeed;
-        const setWidth = (cardWidth + 50) * productsRef.current.length;
-        
-        // Seamless wrap: If we go past one full set, jump back to 0
-        if (Math.abs(next) >= setWidth) {
-          next = 0;
+
+        // Seamless wrap: once we've drifted a full set past our starting offset,
+        // snap back by exactly one set width — since the sets are identical,
+        // this snap is visually invisible.
+        if (Math.abs(next) >= currentSetWidth * 2) {
+          next += currentSetWidth;
         }
         return next;
       });
     }
-
     rafRef.current = requestAnimationFrame(animate);
   }, [isDragging, isPaused, isDesktop, cardWidth]);
 
@@ -104,14 +102,24 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     };
   }, [animate]);
 
-  // ========== DRAG / TOUCH / WHEEL ==========
+  // ========== WHEEL: trackpad-only (horizontal gesture), mouse wheel ignored ==========
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (!isDesktop) return;
-      const delta = e.deltaY || e.deltaX;
-      setPosition((prev) => prev - delta);
+      // A traditional mouse wheel only ever produces vertical deltaY with deltaX at 0.
+      // A trackpad's two-finger horizontal swipe produces a real deltaX — that's the
+      // only signal we act on, so plain mouse-wheel spinning no longer moves the carousel.
+      if (e.deltaX === 0) return;
+
+      setPosition((prev) => {
+        let next = prev - e.deltaX;
+        if (Math.abs(next) >= setWidth * 2) {
+          next += setWidth;
+        }
+        return next;
+      });
     },
-    [isDesktop]
+    [isDesktop, setWidth]
   );
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -149,20 +157,16 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
 
   // ========== ARROW BUTTONS ==========
   const scrollByCard = (direction: "left" | "right") => {
-    const moveBy = direction === "left" ? cardWidth + 50 : -(cardWidth + 50);
-    
+    const moveBy = direction === "left" ? step : -step;
+
     setPosition((prev) => {
       let next = prev + moveBy;
-      const setWidth = (cardWidth + 50) * productsRef.current.length;
-      
-      // Seamless wrap when using arrows
-      if (Math.abs(next) >= setWidth) {
-        next = next % setWidth;
+      if (Math.abs(next) >= setWidth * 2) {
+        next += direction === "left" ? -setWidth : setWidth;
       }
       return next;
     });
 
-    // Pause briefly for manual interaction
     setIsPaused(true);
     setTimeout(() => setIsPaused(false), 1500);
   };
@@ -193,7 +197,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
           </div>
         </div>
 
-        {/* Track (Uses transform for maximum performance) */}
+        {/* Track */}
         <div
           ref={trackRef}
           className="flex items-center absolute left-0 will-change-transform"
@@ -216,7 +220,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
         >
           {loopProducts.map((product, index) => {
             const imageUrl = getImageUrl(product);
-
             return (
               <div
                 key={`${product.id}-${index}`}
@@ -230,7 +233,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
                 }}
                 onClick={() => onProductClick(product)}
               >
-                {/* Fully rounded corners + No cropping (object-contain) */}
                 <div className="relative w-full h-full rounded-[32px] overflow-hidden">
                   <img
                     src={imageUrl}
@@ -243,24 +245,26 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
             );
           })}
         </div>
-      </div>
 
-      {/* ========== APPLE-STYLE ARROW BUTTONS (Below Carousel) ========== */}
-      <div className="flex items-center justify-center gap-6 mt-6 pb-2">
-        <button
-          onClick={() => scrollByCard("left")}
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <button
-          onClick={() => scrollByCard("right")}
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={24} />
-        </button>
+        {/* Arrow buttons now overlay the carousel itself, near its bottom edge,
+            instead of sitting in normal flow below it where they got pushed
+            off-screen by whatever section comes next. */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 z-20">
+          <button
+            onClick={() => scrollByCard("left")}
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={() => scrollByCard("right")}
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </div>
       </div>
     </div>
   );
