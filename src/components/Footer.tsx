@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube } from "lucide-react";
 import { ShopInfo, SocialMedia } from "@/lib/types";
 
 interface FooterProps {
@@ -13,20 +13,22 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
   return (
     <footer className="bg-luxury-darkBrown text-cream-100 py-16 border-t border-luxury-gold/20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           
-          {/* Brand Column */}
-          <div className="md:col-span-2">
+          {/* Brand & Social Column */}
+          <div>
             <h2 className="font-display text-3xl font-bold tracking-wider text-cream-100 mb-4">
               {shopInfo?.shop_name || "OG WEAR"}
             </h2>
             <div className="gold-line w-16 mb-6" />
-            <p className="font-body text-sm text-cream-200/60 leading-relaxed max-w-md">
+            <p className="font-body text-sm text-cream-200/60 leading-relaxed mb-6">
               {shopInfo?.about_us ||
                 "Discover the latest trends in luxury fashion. Premium clothing collections for Men, Women, and Kids."}
             </p>
-            <div className="flex gap-4 mt-6">
-              {socialMedia?.map((social) => (
+            
+            {/* Social Media - Only show icons if URL exists */}
+            <div className="flex gap-3">
+              {socialMedia?.filter((s) => s.url).map((social) => (
                 <a
                   key={social.platform}
                   href={social.url || "#"}
@@ -38,61 +40,38 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                   {social.platform === "instagram" && <Instagram size={18} />}
                   {social.platform === "facebook" && <Facebook size={18} />}
                   {social.platform === "twitter" && <Twitter size={18} />}
+                  {social.platform === "youtube" && <Youtube size={18} />}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
+          {/* Quick Links - Fixed spacing */}
+          <div className="lg:pl-4">
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Quick Links</h3>
             <div className="space-y-3">
-              <Link href="/shop" className="font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
+              <Link href="/shop" className="block font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
                 Shop All
               </Link>
-              <Link href="/category/men" className="font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
+              <Link href="/category/men" className="block font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
                 Men
               </Link>
-              <Link href="/category/women" className="font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
+              <Link href="/category/women" className="block font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
                 Women
               </Link>
-              <Link href="/category/kids" className="font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
+              <Link href="/category/kids" className="block font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
                 Kids
               </Link>
-              <Link href="/new-arrivals" className="font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
+              <Link href="/new-arrivals" className="block font-body text-sm text-cream-200/60 hover:text-luxury-gold transition-colors">
                 New Arrivals
               </Link>
             </div>
           </div>
 
-          {/* Contact & Location */}
-          <div>
-            <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Contact & Visit Us</h3>
+          {/* Contact Info */}
+          <div className="lg:pl-4">
+            <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Contact Us</h3>
             <div className="space-y-4">
-              
-              {/* Location */}
-              {shopInfo?.location && (
-                <div className="flex items-start gap-3">
-                  <MapPin size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-body text-sm text-cream-200/80 leading-relaxed">
-                      {shopInfo.location}
-                    </p>
-                    {shopInfo.location.startsWith("http") && (
-                      <a 
-                        href={shopInfo.location} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs font-body text-luxury-gold hover:underline"
-                      >
-                        Open in Maps →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Phone */}
               {shopInfo?.phone && (
                 <div className="flex items-start gap-3">
                   <Phone size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
@@ -101,8 +80,6 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                   </a>
                 </div>
               )}
-
-              {/* Email */}
               {shopInfo?.email && (
                 <div className="flex items-start gap-3">
                   <Mail size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
@@ -111,6 +88,40 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                   </a>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Location & Google Map Column */}
+          <div>
+            <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Find Us</h3>
+            <div className="space-y-4">
+              {/* Show Location text */}
+              {shopInfo?.location && (
+                <div className="flex items-start gap-3">
+                  <MapPin size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
+                  <p className="font-body text-sm text-cream-200/80 leading-relaxed">
+                    {shopInfo.location}
+                  </p>
+                </div>
+              )}
+              
+              {/* Embedded Google Map */}
+              <div className="w-full h-40 rounded-lg overflow-hidden border border-white/10 shadow-lg">
+                {shopInfo?.location ? (
+                  <iframe
+                    title="Store Location Map"
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(shopInfo.location)}&output=embed`}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-luxury-brown flex items-center justify-center text-cream-200/40 text-xs text-center px-4">
+                    Map preview will appear here once you add a location in Admin.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
