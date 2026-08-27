@@ -9,14 +9,17 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Initialize Lenis with ultra-smooth settings
     const lenis = new Lenis({
-      duration: 1.2,         // How long the glide takes (higher = slower/smoother)
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Ultra-smooth ease-out
-      smoothWheel: true,     // Enable smooth scrolling for mouse wheels
-      wheelMultiplier: 1,    // Adjust mouse wheel sensitivity
-      touchMultiplier: 1.5,  // Adjust touch sensitivity
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.5,
     });
 
     lenisRef.current = lenis;
+
+    // FORCE Lenis to jump to absolute top on page load
+    lenis.scrollTo(0, { immediate: true, force: true });
 
     // Connect Lenis to requestAnimationFrame for 60fps performance
     function raf(time: number) {

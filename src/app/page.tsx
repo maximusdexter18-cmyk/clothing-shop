@@ -40,6 +40,19 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
+  // ========== FORCE SCROLL TO TOP ON PAGE LOAD ==========
+  useEffect(() => {
+    if (!loading) {
+      // 1. Immediately jump to absolute top
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      
+      // 2. Wait for the images to finish rendering, then jump again (just in case)
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }, 100);
+    }
+  }, [loading]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -124,12 +137,11 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-               {/* ==================== SCROLL REVEAL IMAGES (Strict Mobile/PC Split) ==================== */}
+        {/* ==================== SCROLL REVEAL IMAGES (Strict Mobile/PC Split) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">
             <div className="space-y-0">
               {scrollRevealImages.map((srImage, index) => {
-                // Strict device check
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                 return (
@@ -139,9 +151,8 @@ export default function HomePage() {
                       index === 0 ? "h-screen w-full" : "py-12 md:py-24"
                     }`}
                   >
-                    {/* DEVICE-SPECIFIC IMAGE (No overlap!) */}
                     <ImageReveal
-                      src={isMobile ? srImage.mobile_src : srImage.src}
+                      src={isMobile ? srImage.mobile_src || srImage.src : srImage.src}
                       alt={srImage.alt}
                       height={srImage.height || 500}
                       className={`w-full ${
@@ -173,7 +184,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== MORE PICKS (Bigger on Mobile - 2 in a row) ==================== */}
+        {/* ==================== MORE PICKS ==================== */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
