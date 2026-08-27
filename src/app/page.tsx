@@ -124,36 +124,26 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-               {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
+        {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">
             <div className="space-y-0">
               {scrollRevealImages.map((srImage, index) => {
-                // Check if the screen is mobile (less than 768px) or desktop
-                const isMobile = window.innerWidth < 768;
-                
+                const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
                 return (
-                  <div 
-                    key={srImage.id} 
+                  <div
+                    key={srImage.id}
                     className={`w-full px-0 ${
-                      index === 0 
-                        ? "h-screen w-full" // Full viewport height
-                        : "py-12 md:py-24" // Proper spacing for others
+                      index === 0 ? "h-screen w-full" : "py-12 md:py-24"
                     }`}
                   >
                     <ImageReveal
-                      // USE DIFFERENT IMAGES FOR MOBILE & DESKTOP
-                      src={
-                        isMobile 
-                          ? (srImage.mobile_src || srImage.src) // Fallback to main src if no mobile image
-                          : srImage.src
-                      }
+                      src={isMobile ? srImage.mobile_src || srImage.src : srImage.src}
                       alt={srImage.alt}
                       height={srImage.height || 500}
                       className={`w-full ${
-                        index === 0 
-                          ? "h-full object-cover" // Full screen cover
-                          : "h-auto object-contain" 
+                        index === 0 ? "h-full object-cover" : "h-auto object-contain"
                       }`}
                     />
                   </div>
@@ -162,7 +152,8 @@ export default function HomePage() {
             </div>
           </section>
         )}
-        {/* Poster Carousel */}
+
+        {/* ==================== POSTER CAROUSEL ==================== */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
             <PosterCarousel
@@ -180,7 +171,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* More Picks - Bigger on Mobile (2 in a row) */}
+        {/* ==================== MORE PICKS (Bigger on Mobile - 2 in a row) ==================== */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -309,7 +300,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Model Showcase */}
+        {/* ==================== MODEL SHOWCASE ==================== */}
         {heroImages.length > 3 && (
           <section className="py-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -364,7 +355,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* New Arrivals */}
+        {/* ==================== NEW ARRIVALS ==================== */}
         {newArrivals.length > 0 && (
           <section className="py-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -460,7 +451,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Featured Products */}
+        {/* ==================== FEATURED PRODUCTS ==================== */}
         {featuredProducts.length > 0 && (
           <section className="py-12">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">

@@ -63,9 +63,10 @@ export default function AdminPage() {
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
   const [categoryUploading, setCategoryUploading] = useState<Record<string, boolean>>({});
 
-  // Scroll Reveal images
+  // Scroll Reveal images (NOW INCLUDES mobile_src)
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [srFormSrc, setSrFormSrc] = useState("");
+  const [srFormMobileSrc, setSrFormMobileSrc] = useState("");
   const [srFormAlt, setSrFormAlt] = useState("");
   const [srFormHeight, setSrFormHeight] = useState(400);
   const [srFormOrder, setSrFormOrder] = useState(0);
@@ -354,9 +355,10 @@ export default function AdminPage() {
     }
   };
 
-  // Scroll Reveal handlers
+  // Scroll Reveal handlers (UPDATED for mobile_src)
   const resetSrForm = () => {
     setSrFormSrc("");
+    setSrFormMobileSrc("");
     setSrFormAlt("");
     setSrFormHeight(400);
     setSrFormOrder(0);
@@ -367,6 +369,7 @@ export default function AdminPage() {
   const handleEditSrImage = (image: ScrollRevealImage) => {
     setEditingSrImage(image);
     setSrFormSrc(image.src);
+    setSrFormMobileSrc(image.mobile_src || "");
     setSrFormAlt(image.alt);
     setSrFormHeight(image.height);
     setSrFormOrder(image.display_order);
@@ -382,6 +385,7 @@ export default function AdminPage() {
     try {
       const body = {
         src: srFormSrc,
+        mobile_src: srFormMobileSrc, // ADDED mobile_src
         alt: srFormAlt,
         height: srFormHeight,
         display_order: srFormOrder,
@@ -920,7 +924,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Scroll Reveal Images */}
+          {/* Scroll Reveal Images (UPDATED WITH MOBILE_SRC) */}
           {activeTab === "scroll-reveal" && (
             <div className="space-y-6 max-w-3xl">
               <button onClick={() => setActiveTab("dashboard")}
@@ -929,7 +933,7 @@ export default function AdminPage() {
               </button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Scroll Reveal Images</h2>
               <p className="font-body text-xs text-luxury-brown/50">
-                Manage the full-screen images that appear between content sections as the user scrolls down the homepage. Images reveal with a smooth scroll-driven animation.
+                Manage the full-screen images that appear between content sections as the user scrolls down the homepage. You can upload a separate image for Desktop and Mobile.
               </p>
 
               {/* Add/Edit Form */}
@@ -939,15 +943,20 @@ export default function AdminPage() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Image URL</label>
+                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Desktop Image URL</label>
                     <input value={srFormSrc} onChange={(e) => setSrFormSrc(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/image.jpg" />
+                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/desktop.jpg" />
                   </div>
                   <div>
-                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Alt Text</label>
-                    <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Fashion collection" />
+                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Mobile Image URL (Optional)</label>
+                    <input value={srFormMobileSrc} onChange={(e) => setSrFormMobileSrc(e.target.value)}
+                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/mobile.jpg" />
                   </div>
+                </div>
+                <div>
+                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Alt Text</label>
+                  <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)}
+                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Fashion collection" />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
@@ -1007,7 +1016,10 @@ export default function AdminPage() {
                         </button>
                         <div className="flex-1 min-w-0">
                           <p className="font-body text-sm font-medium text-luxury-brown truncate">{image.alt}</p>
-                          <p className="font-body text-xs text-luxury-brown/40 truncate">{image.src}</p>
+                          <p className="font-body text-xs text-luxury-brown/40 truncate">Desktop: {image.src}</p>
+                          {image.mobile_src && (
+                            <p className="font-body text-xs text-luxury-brown/40 truncate">Mobile: {image.mobile_src}</p>
+                          )}
                           <div className="flex items-center gap-4 mt-1">
                             <span className="font-body text-xs text-luxury-brown/50">Height: {image.height}px</span>
                             <span className="font-body text-xs text-luxury-brown/50">Order: {image.display_order}</span>
