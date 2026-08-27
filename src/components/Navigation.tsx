@@ -1,4 +1,3 @@
-// src/components/Navigation.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -71,7 +70,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
 
   return (
     <>
-      {/* Top bar - DARK GRADIENT + BLUR */}
+      {/* Top bar */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -80,7 +79,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
-          {/* Left Side: Back Button (replaces Logo if NOT homepage) OR Logo */}
+          {/* Left Side: Back Button or Brand Logo */}
           <div className="flex items-center gap-3 lg:gap-5">
             {!isHomepage ? (
               <button
@@ -116,6 +115,19 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
 
           {/* Right section */}
           <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* ACCOUNT - ONLY SHOWS ON DESKTOP (hidden on mobile) */}
+            <button
+              onClick={handleAuthClick}
+              className="hidden lg:flex relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
+              aria-label={user ? "Account" : "Sign in"}
+            >
+              <User size={18} />
+              {mounted && user && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-luxury-gold rounded-full border-2 border-black/50" />
+              )}
+            </button>
+
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -169,7 +181,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
         </div>
       </motion.div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Account Button stays here */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -190,6 +202,8 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
                 </Link>
               ))}
               <div className="gold-line w-20 mx-0 my-4" />
+              
+              {/* Account button for mobile */}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

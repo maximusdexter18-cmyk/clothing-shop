@@ -108,6 +108,7 @@ export interface ShopInfo {
   map_embed_url: string | null;
   created_at: string;
   updated_at: string;
+  location?: string;
 }
 
 export interface FilterOption {

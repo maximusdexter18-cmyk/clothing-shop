@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [shopPhone, setShopPhone] = useState("");
   const [shopAddress, setShopAddress] = useState("");
   const [shopAbout, setShopAbout] = useState("");
+  const [shopLocation, setShopLocation] = useState(""); // <--- ADDED LOCATION
 
   // Homepage hero content (owner-editable)
   const [heroContent, setHeroContent] = useState<HomepageContent | null>(null);
@@ -63,7 +64,7 @@ export default function AdminPage() {
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
   const [categoryUploading, setCategoryUploading] = useState<Record<string, boolean>>({});
 
-  // Scroll Reveal images (NOW INCLUDES mobile_src)
+  // Scroll Reveal images
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [srFormSrc, setSrFormSrc] = useState("");
   const [srFormMobileSrc, setSrFormMobileSrc] = useState("");
@@ -129,7 +130,6 @@ export default function AdminPage() {
         supabase.from("social_media").select("*").order("display_order"),
       ]);
 
-      // Fetch category images separately
       const [catMenRes, catWomenRes, catKidsRes] = await Promise.all([
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_men").limit(1).maybeSingle(),
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_women").limit(1).maybeSingle(),
@@ -140,7 +140,6 @@ export default function AdminPage() {
       setShopInfo(shopRes.data);
       setSocialMedia(socialRes.data || []);
 
-      // Fetch category images from homepage_content
       const catImages: Record<string, string> = {};
       if (catMenRes.data?.image_url) catImages.men = catMenRes.data.image_url;
       if (catWomenRes.data?.image_url) catImages.women = catWomenRes.data.image_url;
@@ -154,9 +153,9 @@ export default function AdminPage() {
         setShopPhone(shopRes.data.phone || "");
         setShopAddress(shopRes.data.address || "");
         setShopAbout(shopRes.data.about_us || "");
+        setShopLocation(shopRes.data.location || ""); // <--- ADDED LOCATION
       }
 
-      // Fetch hero/homepage content row for the homepage hero
       const heroRes = await supabase
         .from("homepage_content")
         .select("*")
@@ -170,7 +169,6 @@ export default function AdminPage() {
       setHeroDescription(hc?.description || "");
       setHeroButton(hc?.button_text || "");
 
-      // Fetch scroll reveal images
       const srRes = await supabase
         .from("scroll_reveal_images")
         .select("*")
@@ -302,6 +300,7 @@ export default function AdminPage() {
           phone: shopPhone,
           address: shopAddress,
           about_us: shopAbout,
+          location: shopLocation, // <--- ADDED LOCATION
         }),
       });
       fetchAdminData();
@@ -355,7 +354,7 @@ export default function AdminPage() {
     }
   };
 
-  // Scroll Reveal handlers (UPDATED for mobile_src)
+  // Scroll Reveal handlers
   const resetSrForm = () => {
     setSrFormSrc("");
     setSrFormMobileSrc("");
@@ -385,7 +384,7 @@ export default function AdminPage() {
     try {
       const body = {
         src: srFormSrc,
-        mobile_src: srFormMobileSrc, // ADDED mobile_src
+        mobile_src: srFormMobileSrc,
         alt: srFormAlt,
         height: srFormHeight,
         display_order: srFormOrder,
@@ -807,6 +806,18 @@ export default function AdminPage() {
                   <textarea value={shopAddress} onChange={(e) => setShopAddress(e.target.value)} rows={2}
                     className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
+
+                {/* NEW: Location Input */}
+                <div>
+                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Store Location (Text or Google Maps URL)</label>
+                  <input 
+                    value={shopLocation} 
+                    onChange={(e) => setShopLocation(e.target.value)}
+                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" 
+                    placeholder="e.g. 123 Main Street, Mumbai, India (or Google Maps URL)"
+                  />
+                </div>
+
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">About Us</label>
                   <textarea value={shopAbout} onChange={(e) => setShopAbout(e.target.value)} rows={4}
@@ -924,7 +935,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Scroll Reveal Images (UPDATED WITH MOBILE_SRC) */}
+          {/* Scroll Reveal Images */}
           {activeTab === "scroll-reveal" && (
             <div className="space-y-6 max-w-3xl">
               <button onClick={() => setActiveTab("dashboard")}

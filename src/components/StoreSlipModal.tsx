@@ -18,6 +18,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   const [downloading, setDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
 
   const hiddenPagesRef = useRef<HTMLDivElement>(null);
   const totalPages = items.length;
@@ -38,6 +39,15 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   const refId = useMemo(() => {
     return `SLIP-${Math.floor(100000 + Math.random() * 900000)}`;
   }, []);
+
+  const toggleCheck = (productId: string) => {
+    setCheckedItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) newSet.delete(productId);
+      else newSet.add(productId);
+      return newSet;
+    });
+  };
 
   const generatePDF = async (): Promise<jsPDF | null> => {
     if (!hiddenPagesRef.current) return null;
@@ -84,7 +94,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
       setDownloading(true);
       const pdf = await generatePDF();
       if (pdf) {
-        pdf.save(`Product_Catalog_Slip_${Date.now()}.pdf`);
+        pdf.save(`Curated_Slip_${Date.now()}.pdf`);
         setDownloadSuccess(true);
         setTimeout(() => setDownloadSuccess(false), 2500);
       }
@@ -102,14 +112,14 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
       if (!pdf) return;
 
       const pdfBlob = pdf.output("blob");
-      const file = new File([pdfBlob], `Product_Catalog_Slip.pdf`, {
+      const file = new File([pdfBlob], `Curated_Slip.pdf`, {
         type: "application/pdf",
       });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `Product Catalog Slip`,
-          text: `Here is the product catalog slip with full image for easy item identification.`,
+          title: `Curated Shopping Slip`,
+          text: `Here is my curated list for easy item identification.`,
           files: [file],
         });
         setShareSuccess(true);
@@ -150,7 +160,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
           <div className="flex items-center gap-2">
             <FileText className="text-luxury-gold w-5 h-5" />
             <h3 className="font-display text-base font-bold text-luxury-brown">
-              Product Catalog Slip
+              Curated Lookbook Slip
             </h3>
           </div>
           <button
@@ -186,7 +196,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
 
         {/* VISIBLE PAGE PREVIEW */}
         <div className="w-full bg-[#FAF7F2] border border-luxury-brown/20 rounded-xl p-4 shadow-lg flex flex-col text-luxury-brown select-none relative overflow-hidden">
-          {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId)}
+          {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId, checkedItems.has(activeItem.product.id), toggleCheck)}
         </div>
 
         {/* Action Buttons: Download PDF & Share PDF */}
@@ -233,7 +243,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
                 style={{ width: "210mm", minHeight: "297mm", padding: "12mm", boxSizing: "border-box" }}
                 className="bg-[#FAF7F2] text-luxury-brown flex flex-col justify-between"
               >
-                {renderProductSlipCard(item, idx, totalPages, dateString, refId, true)}
+                {renderProductSlipCard(item, idx, totalPages, dateString, refId, false, () => {}, true)}
               </div>
             ))}
           </div>
@@ -250,6 +260,8 @@ function renderProductSlipCard(
   totalPages: number,
   dateString: string,
   refId: string,
+  isChecked: boolean,
+  onToggleCheck?: (id: string) => void,
   isPdfExport = false
 ) {
   const fullBodyImg =
@@ -269,75 +281,71 @@ function renderProductSlipCard(
   const selectedSize = item.size || "Standard";
 
   if (isPdfExport) {
-    // PDF A4 Layout: HUGE product image dominating top 75%, compact details bar at bottom
     return (
-      <div className="w-full h-full bg-[#FAF7F2] p-6 flex flex-col justify-between text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
-        {/* Top Minimal Bar (No Shop Name, just Date & Item Count) */}
-        <div className="flex items-center justify-between border-b border-[#3D2B1F]/15 pb-3 mb-2">
-          <span className="font-mono text-sm font-bold text-[#3D2B1F]">
-            DATE: {dateString}
-          </span>
-          <span className="font-mono text-sm font-bold text-[#3D2B1F] bg-[#F5E6C4] px-4 py-1 rounded-full">
-            ITEM #{pageIdx + 1 < 10 ? `0${pageIdx + 1}` : pageIdx + 1} OF {totalPages}
-          </span>
+      <div className="w-full h-full bg-[#FAF7F2] p-4 flex flex-col justify-between text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
+        {/* Top Bar: Elegant Gold Line */}
+        <div className="flex flex-col items-center mb-2">
+          <div className="w-24 h-[2px] bg-[#C5A55A] mb-2" />
+          <span className="font-mono text-xs font-bold text-[#3D2B1F]/70 tracking-[0.2em]">OG WEAR • CURATED SLIP</span>
+          <span className="font-mono text-[10px] text-[#3D2B1F]/40">{refId} • {dateString}</span>
         </div>
 
         {/* HUGE Dominant Product Image Container */}
-        <div className="relative w-full flex-1 min-h-[580px] my-2 rounded-2xl overflow-hidden bg-white border border-[#3D2B1F]/15 shadow-md flex items-center justify-center p-6">
+        <div className="relative w-full flex-1 min-h-[600px] my-2 rounded-2xl overflow-hidden border border-[#3D2B1F]/10 shadow-lg flex items-center justify-center"
+             style={{ background: "radial-gradient(circle, #FFFFFF 0%, #F5E6C4 100%)" }}>
           <img
             src={fullBodyImg}
             alt={item.product.name}
-            className="max-h-[540px] w-auto max-w-full object-contain mix-blend-multiply"
+            className="max-h-[560px] w-auto max-w-full object-contain mix-blend-multiply"
             crossOrigin="anonymous"
           />
-
-          {/* Discount Badge overlay on image */}
+          {/* Discount Badge */}
           {isDiscounted && (
-            <div className="absolute top-6 right-6 bg-[#C5A55A] text-[#3D2B1F] font-sans text-sm font-extrabold px-4 py-2 rounded-full shadow flex items-center gap-1.5">
-              <Tag size={16} /> {discountPercent}% OFF
+            <div className="absolute top-6 right-6 bg-[#3D2B1F] text-[#F5E6C4] font-sans text-sm font-extrabold px-5 py-2 rounded-full shadow-md rotate-3">
+              <Tag size={14} className="inline mr-1" /> {discountPercent}% OFF
+            </div>
+          )}
+          {/* Checked Badge */}
+          {isChecked && (
+            <div className="absolute top-6 left-6 bg-emerald-600 text-white font-sans text-sm font-extrabold px-5 py-2 rounded-full shadow-md">
+              <Check size={14} className="inline mr-1" /> FOUND
             </div>
           )}
         </div>
 
-        {/* Compact Details Box at Bottom */}
-        <div className="bg-white rounded-xl p-5 border border-[#3D2B1F]/15 shadow-sm space-y-3 mt-2">
-          {/* Row 1: Brand & Product Title */}
-          <div className="flex items-baseline justify-between border-b border-[#3D2B1F]/10 pb-2">
+        {/* Details Box: Elegant Luxury Tag */}
+        <div className="bg-white rounded-xl p-6 border border-[#3D2B1F]/10 shadow-sm space-y-4">
+          <div className="flex items-start justify-between">
             <div>
               {item.product.brand?.name && (
-                <span className="font-sans text-xs font-bold text-[#C5A55A] uppercase tracking-wider block">
+                <span className="font-sans text-[10px] font-bold text-[#C5A55A] uppercase tracking-[0.2em] block">
                   {item.product.brand.name}
                 </span>
               )}
-              <h2 className="font-serif text-2xl font-bold text-[#3D2B1F] leading-snug">
+              <h2 className="font-serif text-3xl font-bold text-[#3D2B1F] leading-tight mt-1">
                 {item.product.name}
               </h2>
             </div>
+          </div>
+          <div className="flex items-end justify-between border-t border-[#3D2B1F]/10 pt-4">
+            <div className="flex items-center gap-4">
+              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-4 py-2 rounded-xl text-[#3D2B1F] font-sans text-xs font-bold">
+                SIZE: <strong className="text-[#C5A55A] text-sm">{selectedSize}</strong>
+              </span>
+              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-4 py-2 rounded-xl text-[#3D2B1F] font-sans text-xs font-bold">
+                QTY: <strong>{item.quantity}</strong>
+              </span>
+            </div>
             <div className="text-right">
-              <div className="font-serif text-2xl font-extrabold text-[#3D2B1F]">
+              <div className="font-serif text-3xl font-extrabold text-[#3D2B1F]">
                 ₹{finalPrice.toFixed(0)}
               </div>
               {isDiscounted && (
-                <span className="font-sans text-xs text-[#3D2B1F]/50 line-through block">
+                <span className="font-sans text-xs text-[#3D2B1F]/40 line-through block">
                   ₹{originalPrice.toFixed(0)}
                 </span>
               )}
             </div>
-          </div>
-
-          {/* Row 2: Selected Size & Quantity & Ref Code */}
-          <div className="flex items-center justify-between text-xs font-bold text-[#3D2B1F]/90">
-            <div className="flex items-center gap-3">
-              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-3 py-1.5 rounded-lg">
-                SIZE: <strong className="text-[#C5A55A] font-extrabold text-sm">{selectedSize}</strong>
-              </span>
-              <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-3 py-1.5 rounded-lg">
-                QTY: <strong>{item.quantity}</strong>
-              </span>
-            </div>
-            <span className="font-mono text-[11px] text-[#3D2B1F]/60">
-              REF: {refId}
-            </span>
           </div>
         </div>
       </div>
@@ -347,45 +355,59 @@ function renderProductSlipCard(
   // Modal Screen Preview Layout
   return (
     <div className="flex flex-col space-y-3">
-      {/* Minimal Date & Item Header (No Shop Name) */}
-      <div className="flex items-center justify-between border-b border-luxury-brown/15 pb-2 text-xs font-bold text-luxury-brown">
-        <span>DATE: {dateString}</span>
-        <span className="bg-cream-200 px-3 py-0.5 rounded-full font-mono">
-          ITEM #{pageIdx + 1} OF {totalPages}
-        </span>
+      {/* Elegant Top Bar */}
+      <div className="flex flex-col items-center mb-1">
+        <div className="w-16 h-[2px] bg-luxury-gold mb-1" />
+        <span className="font-mono text-[9px] font-bold text-luxury-brown/60 tracking-[0.2em]">OG WEAR • CURATED SLIP</span>
+        <span className="font-mono text-[8px] text-luxury-brown/40">{refId} • {dateString}</span>
       </div>
 
-      {/* BIG Image Container */}
-      <div className="relative w-full h-80 sm:h-96 rounded-xl overflow-hidden bg-white border border-cream-300 flex items-center justify-center p-3">
+      {/* BIG Image Container with Gradient */}
+      <div className="relative w-full h-80 sm:h-96 rounded-xl overflow-hidden border border-cream-300 flex items-center justify-center"
+           style={{ background: "radial-gradient(circle, #FFFFFF 0%, #F5E6C4 100%)" }}>
         <img
           src={fullBodyImg}
           alt={item.product.name}
           className="max-h-full max-w-full object-contain mix-blend-multiply"
           crossOrigin="anonymous"
         />
-
         {isDiscounted && (
-          <div className="absolute top-3 right-3 bg-luxury-gold text-luxury-brown font-body text-xs font-extrabold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-            <Tag size={12} /> {discountPercent}% OFF
+          <div className="absolute top-3 right-3 bg-luxury-brown text-cream-100 font-body text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md rotate-3">
+            <Tag size={12} className="inline mr-1" /> {discountPercent}% OFF
+          </div>
+        )}
+        {isChecked && (
+          <div className="absolute top-3 left-3 bg-emerald-600 text-white font-body text-xs font-extrabold px-4 py-1.5 rounded-full shadow-md">
+            <Check size={12} className="inline mr-1" /> FOUND
           </div>
         )}
       </div>
 
-      {/* Compact Details Section */}
-      <div className="bg-white rounded-xl p-3 border border-cream-300 space-y-2">
-        <div className="flex items-baseline justify-between border-b border-cream-200 pb-2">
+      {/* Details Box */}
+      <div className="bg-white rounded-xl p-4 border border-cream-300 space-y-3">
+        <div className="flex items-start justify-between">
           <div>
             {item.product.brand?.name && (
-              <span className="font-body text-[10px] font-bold text-luxury-gold uppercase tracking-wider block">
+              <span className="font-body text-[9px] font-bold text-luxury-gold uppercase tracking-[0.2em] block">
                 {item.product.brand.name}
               </span>
             )}
-            <h3 className="font-display text-base font-bold text-luxury-brown">
+            <h3 className="font-display text-lg font-bold text-luxury-brown">
               {item.product.name}
             </h3>
           </div>
+        </div>
+        <div className="flex items-end justify-between border-t border-cream-200 pt-2">
+          <div className="flex items-center gap-2">
+            <span className="bg-cream-100 border border-cream-300 px-3 py-1.5 rounded-lg">
+              Size: <span className="text-luxury-gold font-extrabold">{selectedSize}</span>
+            </span>
+            <span className="bg-cream-100 border border-cream-300 px-3 py-1.5 rounded-lg">
+              Qty: {item.quantity}
+            </span>
+          </div>
           <div className="text-right">
-            <span className="font-display text-lg font-extrabold text-luxury-brown block">
+            <span className="font-display text-2xl font-extrabold text-luxury-brown block">
               ₹{finalPrice.toFixed(0)}
             </span>
             {isDiscounted && (
@@ -395,21 +417,21 @@ function renderProductSlipCard(
             )}
           </div>
         </div>
-
-        <div className="flex items-center justify-between text-xs font-bold text-luxury-brown">
-          <div className="flex items-center gap-2">
-            <span className="bg-cream-100 border border-cream-300 px-2.5 py-1 rounded-md">
-              Size: <span className="text-luxury-gold font-extrabold">{selectedSize}</span>
-            </span>
-            <span className="bg-cream-100 border border-cream-300 px-2.5 py-1 rounded-md">
-              Qty: {item.quantity}
-            </span>
-          </div>
-          <span className="font-mono text-[10px] text-luxury-brown/50">
-            REF: {refId}
-          </span>
-        </div>
       </div>
+
+      {/* Interactive Check Button */}
+      {onToggleCheck && (
+        <button
+          onClick={() => onToggleCheck(item.product.id)}
+          className={`w-full py-3 rounded-full font-body text-xs font-bold uppercase tracking-wider transition-all ${
+            isChecked
+              ? "bg-emerald-600 text-white"
+              : "bg-luxury-brown text-cream-100 hover:bg-luxury-darkBrown"
+          }`}
+        >
+          {isChecked ? "✓ Found in Store" : "Mark as Found"}
+        </button>
+      )}
     </div>
   );
 }
