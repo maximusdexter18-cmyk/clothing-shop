@@ -9,7 +9,28 @@ interface FooterProps {
   socialMedia?: SocialMedia[];
 }
 
+// Helper function to extract the src URL from iframe code
+function getEmbedUrl(location: string): string {
+  if (!location) return "";
+
+  // If the user accidentally pasted the entire iframe HTML code
+  const iframeMatch = location.match(/src="([^"]+)"/);
+  if (iframeMatch) {
+    return iframeMatch[1]; // Extract just the URL inside src="..."
+  }
+
+  // If it's a direct embed link
+  if (location.includes("/maps/embed")) {
+    return location;
+  }
+
+  // If it's a standard address or query, use the search embed
+  return `https://www.google.com/maps?q=${encodeURIComponent(location)}&output=embed`;
+}
+
 export default function Footer({ shopInfo, socialMedia }: FooterProps) {
+  const mapUrl = shopInfo?.location ? getEmbedUrl(shopInfo.location) : "";
+
   return (
     <footer className="bg-transparent border-t border-white/10 py-16"> {/* TRANSPARENT BACKGROUND */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -99,7 +120,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
               {shopInfo?.location && (
                 <div className="flex items-start gap-3">
                   <MapPin size={18} className="text-luxury-gold flex-shrink-0 mt-0.5" />
-                  <p className="font-body text-sm text-cream-200/80 leading-relaxed">
+                  <p className="font-body text-sm text-cream-200/80 leading-relaxed break-all">
                     {shopInfo.location}
                   </p>
                 </div>
@@ -107,10 +128,10 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
               
               {/* Embedded Google Map */}
               <div className="w-full h-40 rounded-lg overflow-hidden border border-white/10 shadow-lg">
-                {shopInfo?.location ? (
+                {mapUrl ? (
                   <iframe
                     title="Store Location Map"
-                    src={`https://www.google.com/maps?q=${encodeURIComponent(shopInfo.location)}&output=embed`}
+                    src={mapUrl}
                     className="w-full h-full border-0"
                     allowFullScreen
                     loading="lazy"
