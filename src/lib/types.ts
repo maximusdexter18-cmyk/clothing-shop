@@ -191,6 +191,7 @@ export const SIZES: Record<Gender, string[]> = {
 export interface ScrollRevealImage {
   id: string;
   src: string;
+  mobile_src?: string;
   alt: string;
   height: number;
   display_order: number;
