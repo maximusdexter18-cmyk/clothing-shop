@@ -41,6 +41,15 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
     }
   }, [loginRequired, setLoginRequired]);
 
+  // Prevent background scroll when mobile menu opens
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [mobileMenuOpen]);
+
   const isHomepage = pathname === "/";
   const isWishlist = pathname === "/wishlist";
 
@@ -56,6 +65,10 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
     setAuthOpen(true);
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <>
       {/* Top bar - DARK GRADIENT + BLUR */}
@@ -65,16 +78,26 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
         className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10"
       >
-        {/* Added px-4 for mobile so items don't touch the edge */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
-          {/* Left Side: Brand Logo */}
+          {/* Left Side: Back Button (replaces Logo if NOT homepage) OR Logo */}
           <div className="flex items-center gap-3 lg:gap-5">
-            <Link href="/" className="flex flex-col">
-              <span className="font-display text-3xl lg:text-4xl font-extrabold tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                {shopInfo?.shop_name || "OG WEAR"}
-              </span>
-            </Link>
+            {!isHomepage ? (
+              <button
+                onClick={handleBack}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
+                aria-label="Go back"
+                title="Go back"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            ) : (
+              <Link href="/" className="flex flex-col">
+                <span className="font-display text-3xl lg:text-4xl font-extrabold tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {shopInfo?.shop_name || "OG WEAR"}
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* Desktop Nav */}
@@ -91,24 +114,9 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
             ))}
           </div>
 
-          {/* Right section - Buttons */}
+          {/* Right section */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* HOME BUTTON - Only visible when NOT on homepage */}
-            {!isHomepage && (
-              <Link
-                href="/"
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
-                aria-label="Go to Homepage"
-                title="Home"
-              >
-                <Home size={18} />
-                <span className="hidden md:inline text-xs font-body uppercase tracking-wider">
-                  Home
-                </span>
-              </Link>
-            )}
-
-            {/* Search - Always Visible */}
+            {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -121,7 +129,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               </span>
             </button>
 
-            {/* WISHLIST HEART BUTTON */}
+            {/* Wishlist */}
             <Link
               href="/wishlist"
               className="relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -136,7 +144,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               )}
             </Link>
 
-            {/* Cart - Always Visible */}
+            {/* Cart */}
             <button
               onClick={() => setIsOpen(true)}
               className="relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -150,19 +158,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               )}
             </button>
 
-            {/* ACCOUNT BUTTON - ONLY SHOWS ON DESKTOP (HIDDEN ON MOBILE) */}
-            <button
-              onClick={handleAuthClick}
-              className="hidden lg:flex relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
-              aria-label={user ? "Account" : "Sign in"}
-            >
-              <User size={18} />
-              {mounted && user && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-luxury-gold rounded-full border-2 border-black/50" />
-              )}
-            </button>
-
-            {/* Mobile Menu Button (Hidden on Desktop) */}
+            {/* Mobile Menu */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -173,7 +169,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
         </div>
       </motion.div>
 
-      {/* Mobile Menu - Contains Account Button (Only visible on Mobile) */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -194,8 +190,6 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
                 </Link>
               ))}
               <div className="gold-line w-20 mx-0 my-4" />
-              
-              {/* ACCOUNT BUTTON NOW HERE (ONLY MOBILE) */}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

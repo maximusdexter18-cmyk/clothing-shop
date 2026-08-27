@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Product } from "@/lib/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PosterCarouselProps {
   products: Product[];
@@ -17,7 +18,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const [scrollLeftStart, setScrollLeftStart] = useState(0);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
 
-  const [cardWidth, setCardWidth] = useState(400);
+  const [cardWidth, setCardWidth] = useState(450);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -31,7 +32,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
       "/placeholder.png";
   };
 
-  // Update dimensions - CARDS ARE MUCH BIGGER NOW
+  // Update dimensions - HUGE CARDS
   useEffect(() => {
     const updateMetrics = () => {
       setIsDesktop(window.innerWidth >= 1024);
@@ -43,7 +44,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener("resize", updateMetrics);
   }, []);
 
-  // ========== CENTER SPOTLIGHT 3D EFFECT ==========
+  // Center Spotlight 3D
   const updateSpotlight = useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
@@ -58,7 +59,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
       const maxDistance = viewportWidth / 2 + cardWidth;
       const normalizedDistance = Math.min(distance / maxDistance, 1);
 
-      const scale = 1.1 - (normalizedDistance * 0.35); // 1.1 (center) to 0.75 (edge)
+      const scale = 1.1 - (normalizedDistance * 0.35);
       const rotateY = normalizedDistance * -25;
       const translateZ = normalizedDistance * -100;
 
@@ -79,7 +80,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => el.removeEventListener("scroll", handleScroll);
   }, [updateSpotlight]);
 
-  // ========== AUTO-SCROLL (Both Desktop & Mobile) ==========
+  // Infinite Auto-Scroll (Mobile + Desktop)
   useEffect(() => {
     if (isDragging || autoScrollPaused) return;
 
@@ -143,6 +144,19 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     setAutoScrollPaused(false);
   };
 
+  // ========== ARROW BUTTONS ==========
+  const scrollLeft = () => {
+    if (trackRef.current) {
+      trackRef.current.scrollBy({ left: -cardWidth - 50, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (trackRef.current) {
+      trackRef.current.scrollBy({ left: cardWidth + 50, behavior: "smooth" });
+    }
+  };
+
   if (!products || products.length === 0) {
     return <div className="flex items-center justify-center h-32 bg-transparent"><p className="text-sm text-white/40">No products available</p></div>;
   }
@@ -151,8 +165,25 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     <div 
       ref={containerRef}
       className="relative w-full flex items-center justify-center overflow-hidden py-6"
-      style={{ perspective: "1200px", height: isDesktop ? '650px' : '500px' }} // MUCH BIGGER HEIGHT
+      style={{ perspective: "1200px", height: isDesktop ? '650px' : '500px' }}
     >
+      {/* Arrow Buttons */}
+      <button
+        onClick={scrollLeft}
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/50 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-luxury-brown transition-all"
+        aria-label="Scroll left"
+      >
+        <ChevronLeft size={24} />
+      </button>
+      <button
+        onClick={scrollRight}
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/50 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-luxury-brown transition-all"
+        aria-label="Scroll right"
+      >
+        <ChevronRight size={24} />
+      </button>
+
+      {/* Background Letters */}
       <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
         <div className="relative w-full h-full">
           <div className="absolute top-8 left-10 text-4xl md:text-6xl font-serif font-light text-white/10 select-none">S</div>
@@ -192,20 +223,19 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
               className="carousel-card flex-shrink-0 cursor-pointer"
               style={{
                 width: cardWidth,
-                height: isDesktop ? 550 : 400, // MUCH BIGGER CARD HEIGHT
+                height: isDesktop ? 550 : 400,
                 transition: "transform 0.3s ease, opacity 0.3s ease",
                 transformStyle: "preserve-3d",
                 willChange: "transform, opacity",
               }}
               onClick={() => onProductClick(product)}
             >
-              {/* No border, no bg, just the image. Fully visible */}
-              <div className="relative w-full h-full rounded-[20px] overflow-hidden">
+              <div className="relative w-full h-full rounded-[32px] overflow-hidden">
                 <img
                   src={imageUrl}
                   alt={product.name}
                   draggable={false}
-                  className="w-full h-full object-contain" // object-contain = NO CROPPING
+                  className="w-full h-full object-contain"
                 />
               </div>
             </div>

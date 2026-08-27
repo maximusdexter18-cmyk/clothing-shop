@@ -124,9 +124,9 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== SCROLL REVEAL IMAGES (FIRST SECTION) ==================== */}
+        {/* Scroll Reveal Images */}
         {!loading && scrollRevealImages.length > 0 && (
-          <section className="relative pt-32 pb-16"> {/* pt-32 to account for navbar */}
+          <section className="relative pt-32 pb-16">
             <div className="space-y-12 md:space-y-24">
               {scrollRevealImages.map((srImage, index) => (
                 <div key={srImage.id} className="w-full px-0">
@@ -142,7 +142,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== POSTER CAROUSEL (AUTO-MOVING & BIGGER) ==================== */}
+        {/* Poster Carousel */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
             <PosterCarousel
@@ -160,12 +160,11 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== MORE PICKS (NO HEADING) ==================== */}
+        {/* More Picks - Bigger on Mobile (2 in a row) */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
-              {/* Grid: 2 cols on phone, 4 cols on desktop */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-8">
                 {carouselProducts.map((product, i) => {
                   const smallImages =
                     product.images?.filter((img) => img.image_type === "small") || [];
@@ -290,7 +289,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== MODEL SHOWCASE ==================== */}
+        {/* Model Showcase */}
         {heroImages.length > 3 && (
           <section className="py-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -345,7 +344,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== NEW ARRIVALS ==================== */}
+        {/* New Arrivals */}
         {newArrivals.length > 0 && (
           <section className="py-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -441,7 +440,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== FEATURED PRODUCTS ==================== */}
+        {/* Featured Products */}
         {featuredProducts.length > 0 && (
           <section className="py-12">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
