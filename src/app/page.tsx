@@ -37,9 +37,7 @@ export default function HomePage() {
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ========== FILTER STATES ==========
-  const [filterGender, setFilterGender] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  // ========== PRODUCT SELECTION STATE ==========
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
@@ -109,25 +107,13 @@ export default function HomePage() {
   const taglineText =
     shopInfo?.tagline || heroContent?.title || "Redefining Fashion";
 
-  // ========== FILTERED PRODUCTS ==========
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      if (filterGender && p.gender !== filterGender) return false;
-      if (filterCategory && p.category !== filterCategory) return false;
-      return true;
-    });
-  }, [products, filterGender, filterCategory]);
+  // ========== PRODUCTS FOR CAROUSEL ==========
+  const carouselProducts = useMemo(() => {
+    // Return all products for the carousel
+    return products.slice(0, 12); // Limit to 12 for performance
+  }, [products]);
 
-  // ========== CATEGORY OPTIONS ==========
-  const categoryOptions = useMemo(() => {
-    if (filterGender) {
-      return CATEGORIES[filterGender as keyof typeof CATEGORIES] || [];
-    }
-    return Array.from(
-      new Set(Object.values(CATEGORIES).flat())
-    ).sort();
-  }, [filterGender]);
-
+  // ========== FEATURED & NEW ARRIVALS ==========
   const featuredProducts = products.filter((p) => p.is_featured).slice(0, 6);
   const newArrivals = products.filter((p) => p.is_new_arrival).slice(0, 9);
 
@@ -142,7 +128,7 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== MODERN EDITORIAL HERO (MOBILE SAFE) ==================== */}
+        {/* ==================== MODERN EDITORIAL HERO ==================== */}
         <section className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center overflow-hidden pt-24 pb-12">
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-20">
@@ -154,7 +140,6 @@ export default function HomePage() {
                 transition={{ duration: 1, delay: 0 }}
                 className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start text-center lg:text-left"
               >
-                {/* Bold Stacked Headlines - Smaller on Mobile */}
                 <motion.h1
                   className="font-display font-bold leading-[0.95] text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
                   initial={{ opacity: 0, y: 30 }}
@@ -168,7 +153,6 @@ export default function HomePage() {
                   </span>
                 </motion.h1>
 
-                {/* Subtitle Tagline */}
                 <motion.p
                   className="font-body text-xs sm:text-sm md:text-base text-cream-200/80 uppercase tracking-[0.2em] mt-6 mb-8 max-w-md"
                   initial={{ opacity: 0 }}
@@ -178,7 +162,6 @@ export default function HomePage() {
                   {heroContent?.subtitle || "ELEVATE YOUR STYLE. ELEVATE YOUR PRESENCE."}
                 </motion.p>
 
-                {/* Circular Button */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -194,14 +177,13 @@ export default function HomePage() {
                 </motion.div>
               </motion.div>
 
-              {/* RIGHT SIDE: Large Image */}
+              {/* RIGHT SIDE: Large Image (NO GRADIENT) */}
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0.3 }}
                 className="w-full lg:w-1/2 flex justify-center lg:justify-end mt-4 lg:mt-0"
               >
-                {/* Keeps image right next to text on mobile, smaller size */}
                 <div className="relative w-full max-w-[280px] sm:max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
                   <img
                     src="/hero-model.jpg" 
@@ -213,7 +195,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Subtle Scroll Indicator */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -229,6 +210,7 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
         </section>
+
         {/* ==================== SCROLL REVEAL IMAGES ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative pt-0 pb-16">
@@ -247,229 +229,151 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== TOP PICKS & CAROUSEL ==================== */}
-        {!loading && (
-          <section className="relative pt-20 pb-10">
-            
-            <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center mb-8">
-              <p className="font-body text-xs text-luxury-gold uppercase tracking-[0.3em] mb-2">
-                Handpicked Styles
-              </p>
-              <h2 className="font-display text-3xl md:text-5xl font-bold text-cream-100 mb-2">
-                Top picks
-              </h2>
-              <div className="gold-line w-20 mx-auto" />
+        {/* ==================== POSTER CAROUSEL ==================== */}
+        {!loading && carouselProducts.length > 0 && (
+          <section className="relative py-12">
+            <PosterCarousel
+              products={carouselProducts}
+              onProductClick={(p) => {
+                const fb =
+                  p.images?.filter((img) => img.image_type === "full-body")[0]
+                    ?.image_url ||
+                  p.images?.find((img) => img.is_primary)?.image_url ||
+                  p.images?.[0]?.image_url;
+                setSelectedImage(fb);
+                setSelectedProduct(p);
+              }}
+            />
+          </section>
+        )}
 
-              <div className="flex justify-center mt-8">
-                <div className="relative inline-block">
-                  <select
-                    value={filterGender || "all"}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFilterGender(value === "all" ? null : value);
-                      setFilterCategory(null);
-                    }}
-                    className="appearance-none bg-white/90 border-2 border-luxury-gold/20 hover:border-luxury-gold text-luxury-brown font-body text-sm px-6 py-3 pr-12 rounded-full cursor-pointer focus:outline-none focus:border-luxury-gold transition-all duration-300 shadow-md hover:shadow-lg min-w-[200px]"
-                  >
-                    <option value="all">👕 All Categories</option>
-                    <option value="men">👔 Men</option>
-                    <option value="women">👗 Women</option>
-                    <option value="kids">🧸 Kids</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-luxury-brown">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
+        {/* ==================== MORE PICKS (NO HEADING) ==================== */}
+        {!loading && carouselProducts.length > 0 && (
+          <section className="relative py-12">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+              {/* Grid: 2 cols on phone, 4 cols on desktop */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
+                {carouselProducts.map((product, i) => {
+                  const smallImages =
+                    product.images?.filter((img) => img.image_type === "small") || [];
+                  const smallImage =
+                    smallImages[0]?.image_url ||
+                    product.images?.find((img) => img.is_primary)?.image_url ||
+                    product.images?.[0]?.image_url ||
+                    "/placeholder.png";
 
-              <p className="font-body text-xs text-cream-200/70 mt-3">
-                {filterGender ? `Showing ${filterGender}'s collection` : "Showing all collections"}
-                {filterCategory && ` · ${filterCategory}`}
-              </p>
+                  const availableSizes = product.sizes?.filter((s) => s.is_available) || [];
+                  const inStock = availableSizes.length > 0;
+                  const price =
+                    product.is_discounted && product.discount_price
+                      ? product.discount_price
+                      : product.original_price;
+                  const originalPrice = product.original_price;
 
-              {filterGender && categoryOptions.length > 0 && (
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
-                  <button
-                    onClick={() => setFilterCategory(null)}
-                    className={`filter-pill whitespace-nowrap bg-white/80 text-luxury-brown ${!filterCategory ? "active" : ""}`}
-                  >
-                    All Types
-                  </button>
-                  {categoryOptions.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
-                      className={`filter-pill whitespace-nowrap bg-white/80 text-luxury-brown ${filterCategory === cat ? "active" : ""}`}
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: i * 0.05 }}
+                      className="cursor-pointer group"
+                      onClick={() => {
+                        setSelectedImage(smallImage);
+                        setSelectedProduct(product);
+                      }}
                     >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {filteredProducts.length > 0 ? (
-              <PosterCarousel
-                products={filteredProducts}
-                onProductClick={(p) => {
-                  const fb =
-                    p.images?.filter((img) => img.image_type === "full-body")[0]
-                      ?.image_url ||
-                    p.images?.find((img) => img.is_primary)?.image_url ||
-                    p.images?.[0]?.image_url;
-                  setSelectedImage(fb);
-                  setSelectedProduct(p);
-                }}
-              />
-            ) : (
-              <p className="text-center font-body text-sm text-cream-200/70 py-10">
-                No products match these filters yet.
-              </p>
-            )}
-
-            {/* ==================== MORE PICKS ==================== */}
-            {filteredProducts.length > 0 && (
-              <div className="max-w-7xl mx-auto px-6 lg:px-8 mt-4 mb-10">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-center mb-8"
-                >
-                  <p className="font-body text-xs text-luxury-gold uppercase tracking-[0.3em] mb-2">
-                    {filterGender ? `${filterGender} · ${filterCategory || "All Types"}` : filterCategory || "The Collection"}
-                  </p>
-                  <h2 className="font-display text-2xl md:text-3xl font-bold text-cream-100 mb-4">
-                    More picks
-                  </h2>
-                  <div className="gold-line w-20 mx-auto" />
-                </motion.div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
-                  {filteredProducts.map((product, i) => {
-                    const smallImages =
-                      product.images?.filter((img) => img.image_type === "small") || [];
-                    const smallImage =
-                      smallImages[0]?.image_url ||
-                      product.images?.find((img) => img.is_primary)?.image_url ||
-                      product.images?.[0]?.image_url ||
-                      "/placeholder.png";
-
-                    const availableSizes = product.sizes?.filter((s) => s.is_available) || [];
-                    const inStock = availableSizes.length > 0;
-                    const price =
-                      product.is_discounted && product.discount_price
-                        ? product.discount_price
-                        : product.original_price;
-                    const originalPrice = product.original_price;
-
-                    return (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: i * 0.05 }}
-                        className="cursor-pointer group"
-                        onClick={() => {
-                          setSelectedImage(smallImage);
-                          setSelectedProduct(product);
-                        }}
-                      >
-                        <div className="bg-transparent rounded-xl shadow-lg overflow-hidden border border-cream-200/20 hover:shadow-2xl transition-shadow duration-300">
-                          <div className="relative aspect-[3/4] overflow-hidden">
-                            <img
-                              src={smallImage}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute top-3 left-3 hidden md:block">
-                              <span
-                                className={`font-body text-[10px] font-semibold px-3 py-1 rounded-full shadow bg-white/95 ${
-                                  inStock ? "text-emerald-600" : "text-red-500"
-                                }`}
-                              >
-                                {inStock ? "IN STOCK" : "OUT OF STOCK"}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="p-4">
-                            <p className="font-body text-[10px] uppercase tracking-[0.15em] text-cream-200/70 mb-1">
-                              {product.brand?.name || ""}
-                            </p>
-                            <h3 className="font-display text-sm md:text-base font-semibold text-cream-100 truncate mb-3">
-                              {product.name}
-                            </h3>
-
-                            <div className="flex items-center justify-between mb-3 gap-2">
-                              <div>
-                                {product.is_discounted && product.discount_price ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-body text-xs text-cream-200/60 line-through">
-                                      ₹{originalPrice.toFixed(2)}
-                                    </span>
-                                    <span className="font-body text-base font-bold text-luxury-gold">
-                                      ₹{price.toFixed(2)}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="font-body text-base font-bold text-cream-100">
-                                    ₹{price.toFixed(2)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {(() => {
-                              const isItemInBag = items.some((item) => item.product.id === product.id);
-                              const isJustAdded = addedSuccessId === product.id;
-                              return (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!user) {
-                                      addToCart(product, null, smallImage);
-                                      return;
-                                    }
-                                    if (isItemInBag) {
-                                      removeFromCartByProductId(product.id);
-                                      setAddedSuccessId(null);
-                                    } else if (inStock) {
-                                      const defaultSize = availableSizes[0]?.size || null;
-                                      addToCart(product, defaultSize, smallImage);
-                                      setAddedSuccessId(product.id);
-                                      setTimeout(() => setAddedSuccessId(null), 2500);
-                                    }
-                                  }}
-                                  disabled={!inStock}
-                                  className={`mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-full font-body text-[10px] font-bold tracking-wider uppercase transition-all shadow-lg ${
-                                    !inStock
-                                      ? "bg-white/10 text-cream-200/40 cursor-not-allowed"
-                                      : user && (isItemInBag || isJustAdded)
-                                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                                      : "bg-luxury-gold text-luxury-brown hover:bg-cream-100"
-                                  }`}
-                                >
-                                  <ShoppingBag size={12} />
-                                  {!inStock
-                                    ? "Sold Out"
-                                    : user && (isItemInBag || isJustAdded)
-                                    ? "✓ Added"
-                                    : "Add to Bag"}
-                                </button>
-                              );
-                            })()}
+                      <div className="bg-transparent rounded-xl shadow-lg overflow-hidden border border-cream-200/20 hover:shadow-2xl transition-shadow duration-300">
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          <img
+                            src={smallImage}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute top-3 left-3 hidden md:block">
+                            <span
+                              className={`font-body text-[10px] font-semibold px-3 py-1 rounded-full shadow bg-white/95 ${
+                                inStock ? "text-emerald-600" : "text-red-500"
+                              }`}
+                            >
+                              {inStock ? "IN STOCK" : "OUT OF STOCK"}
+                            </span>
                           </div>
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+
+                        <div className="p-4">
+                          <p className="font-body text-[10px] uppercase tracking-[0.15em] text-cream-200/70 mb-1">
+                            {product.brand?.name || ""}
+                          </p>
+                          <h3 className="font-display text-sm md:text-base font-semibold text-cream-100 truncate mb-3">
+                            {product.name}
+                          </h3>
+
+                          <div className="flex items-center justify-between mb-3 gap-2">
+                            <div>
+                              {product.is_discounted && product.discount_price ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-body text-xs text-cream-200/60 line-through">
+                                    ₹{originalPrice.toFixed(2)}
+                                  </span>
+                                  <span className="font-body text-base font-bold text-luxury-gold">
+                                    ₹{price.toFixed(2)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="font-body text-base font-bold text-cream-100">
+                                  ₹{price.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {(() => {
+                            const isItemInBag = items.some((item) => item.product.id === product.id);
+                            const isJustAdded = addedSuccessId === product.id;
+                            return (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!user) {
+                                    addToCart(product, null, smallImage);
+                                    return;
+                                  }
+                                  if (isItemInBag) {
+                                    removeFromCartByProductId(product.id);
+                                    setAddedSuccessId(null);
+                                  } else if (inStock) {
+                                    const defaultSize = availableSizes[0]?.size || null;
+                                    addToCart(product, defaultSize, smallImage);
+                                    setAddedSuccessId(product.id);
+                                    setTimeout(() => setAddedSuccessId(null), 2500);
+                                  }
+                                }}
+                                disabled={!inStock}
+                                className={`mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-full font-body text-[10px] font-bold tracking-wider uppercase transition-all shadow-lg ${
+                                  !inStock
+                                    ? "bg-white/10 text-cream-200/40 cursor-not-allowed"
+                                    : user && (isItemInBag || isJustAdded)
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                    : "bg-luxury-gold text-luxury-brown hover:bg-cream-100"
+                                }`}
+                              >
+                                <ShoppingBag size={12} />
+                                {!inStock
+                                  ? "Sold Out"
+                                  : user && (isItemInBag || isJustAdded)
+                                  ? "✓ Added"
+                                  : "Add to Bag"}
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </section>
         )}
 
