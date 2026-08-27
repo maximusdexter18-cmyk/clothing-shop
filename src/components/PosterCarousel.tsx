@@ -18,7 +18,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const [isPaused, setIsPaused] = useState(false);
   
   const [cardWidth, setCardWidth] = useState(450);
-  const [viewportWidth, setViewportWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
 
   const dragStartXRef = useRef(0);
@@ -26,12 +25,10 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const rafRef = useRef<number>();
   const productsRef = useRef(products);
 
-  // Keep products ref updated
   useEffect(() => {
     productsRef.current = products;
   }, [products]);
 
-  // Duplicate products 4x for seamless ring
   const loopProducts = [...products, ...products, ...products, ...products];
 
   const getImageUrl = (product: Product) => {
@@ -43,7 +40,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     );
   };
 
-  // ========== SEAMLESS CIRCLE LOGIC ==========
   const getSetWidth = useCallback(() => {
     return (cardWidth + (isDesktop ? 50 : 30)) * productsRef.current.length;
   }, [cardWidth, isDesktop]);
@@ -51,17 +47,13 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const normalizePosition = useCallback((pos: number) => {
     const setWidth = getSetWidth();
     if (setWidth === 0) return pos;
-    
-    // Wrap position to stay within [-setWidth, 0] range
     const wrapped = ((pos % setWidth) + setWidth) % setWidth;
-    return -wrapped; // Keeps it in negative range so it goes left
+    return -wrapped; 
   }, [getSetWidth]);
 
   useEffect(() => {
     const updateMetrics = () => {
-      const isLarge = window.innerWidth >= 1024;
-      setIsDesktop(isLarge);
-      setViewportWidth(window.innerWidth);
+      setIsDesktop(window.innerWidth >= 1024);
       setCardWidth(window.innerWidth < 768 ? 280 : 450);
     };
     updateMetrics();
@@ -69,16 +61,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener("resize", updateMetrics);
   }, []);
 
-  // ========== AUTO-SCROLL (NO JUMPING - Always smooth) ==========
   const animate = useCallback(() => {
     if (!isDragging && !isPaused) {
       const baseSpeed = isDesktop ? 0.8 : 0.5;
-      setPosition((prev) => {
-        // Normalize so it never goes below -setWidth or above 0
-        return normalizePosition(prev - baseSpeed);
-      });
+      setPosition((prev) => normalizePosition(prev - baseSpeed));
     }
-
     rafRef.current = requestAnimationFrame(animate);
   }, [isDragging, isPaused, isDesktop, normalizePosition]);
 
@@ -89,15 +76,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     };
   }, [animate]);
 
-  // ========== DRAG / TOUCH / WHEEL ==========
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      if (!isDesktop) return;
-      const delta = e.deltaY || e.deltaX;
-      setPosition((prev) => normalizePosition(prev - delta));
-    },
-    [isDesktop, normalizePosition]
-  );
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!isDesktop) return;
+    const delta = e.deltaY || e.deltaX;
+    setPosition((prev) => normalizePosition(prev - delta));
+  }, [isDesktop, normalizePosition]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -112,9 +95,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     setPosition(normalizePosition(dragStartPosRef.current + delta));
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
@@ -128,15 +109,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     setPosition(normalizePosition(dragStartPosRef.current + delta));
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
+  const handleTouchEnd = () => setIsDragging(false);
 
-  // ========== ARROW BUTTONS ==========
   const scrollByCard = (direction: "left" | "right") => {
     const moveBy = direction === "left" ? cardWidth + (isDesktop ? 50 : 30) : -(cardWidth + (isDesktop ? 50 : 30));
     setPosition((prev) => normalizePosition(prev + moveBy));
-
     setIsPaused(true);
     setTimeout(() => setIsPaused(false), 1500);
   };
@@ -150,30 +127,37 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   }
 
   return (
-    <div className="relative w-full bg-transparent">
-      {/* Carousel Container - No fixed height, allows full image visibility */}
+    <div className="relative w-full bg-transparent py-10 overflow-hidden">
+      {/* Carousel Container - MIN HEIGHT SET SO IT NEVER OVERLAPS */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden py-10"
-        style={{ perspective: "1200px" }}
+        className="relative w-full overflow-hidden"
+        style={{ 
+          minHeight: isDesktop ? '500px' : '350px', 
+          perspective: "1200px",
+          display: 'flex',
+          alignItems: 'center' // Centers images vertically
+        }}
       >
-        {/* Arrow Buttons - ABSOLUTE, always visible on the sides */}
-        <button
-          onClick={() => scrollByCard("left")}
-          className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <button
-          onClick={() => scrollByCard("right")}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-white/10 text-white border border-white/20 backdrop-blur-md hover:bg-white hover:text-black transition-all duration-300"
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={24} />
-        </button>
+        {/* Arrow Buttons - Never hidden, perfectly centered */}
+        <div className="absolute top-1/2 left-0 right-0 z-50 flex justify-between px-2 sm:px-4 pointer-events-none -translate-y-1/2">
+          <button
+            onClick={() => scrollByCard("left")}
+            className="pointer-events-auto flex items-center justify-center w-12 h-12 rounded-full bg-black/60 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-black transition-all duration-300"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={() => scrollByCard("right")}
+            className="pointer-events-auto flex items-center justify-center w-12 h-12 rounded-full bg-black/60 text-white border border-white/20 backdrop-blur-md hover:bg-luxury-gold hover:text-black transition-all duration-300"
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </div>
 
-        {/* Track - Uses translate3d, NO PADDING so edges touch */}
+        {/* Track - Items centered (items-center) */}
         <div
           ref={trackRef}
           className="flex items-center absolute left-0 will-change-transform"
@@ -199,20 +183,15 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
               <div
                 key={`${product.id}-${index}`}
                 className="flex-shrink-0 cursor-pointer"
-                style={{
-                  width: cardWidth,
-                  height: isDesktop ? 'auto' : 'auto', // Auto height to prevent cropping!
-                  minHeight: isDesktop ? '450px' : '300px', // Set minimum but allow growth
-                }}
+                style={{ width: cardWidth }}
                 onClick={() => onProductClick(product)}
               >
-                {/* Fully rounded, NO crop, NO fixed height */}
-                <div className="relative w-full h-auto rounded-[32px] overflow-hidden shadow-xl transition-transform duration-300 hover:scale-105">
+                <div className="relative w-full h-auto rounded-[24px] overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
                   <img
                     src={imageUrl}
                     alt={product.name}
                     draggable={false}
-                    className="w-full h-auto object-contain"
+                    className="w-full h-auto object-contain block"
                   />
                 </div>
               </div>
