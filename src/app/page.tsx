@@ -124,24 +124,44 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* Scroll Reveal Images */}
+               {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
-          <section className="relative pt-32 pb-16">
-            <div className="space-y-12 md:space-y-24">
-              {scrollRevealImages.map((srImage, index) => (
-                <div key={srImage.id} className="w-full px-0">
-                  <ImageReveal
-                    src={srImage.src}
-                    alt={srImage.alt}
-                    height={srImage.height || 500}
-                    className="w-full"
-                  />
-                </div>
-              ))}
+          <section className="relative">
+            <div className="space-y-0">
+              {scrollRevealImages.map((srImage, index) => {
+                // Check if the screen is mobile (less than 768px) or desktop
+                const isMobile = window.innerWidth < 768;
+                
+                return (
+                  <div 
+                    key={srImage.id} 
+                    className={`w-full px-0 ${
+                      index === 0 
+                        ? "h-screen w-full" // Full viewport height
+                        : "py-12 md:py-24" // Proper spacing for others
+                    }`}
+                  >
+                    <ImageReveal
+                      // USE DIFFERENT IMAGES FOR MOBILE & DESKTOP
+                      src={
+                        isMobile 
+                          ? (srImage.mobile_src || srImage.src) // Fallback to main src if no mobile image
+                          : srImage.src
+                      }
+                      alt={srImage.alt}
+                      height={srImage.height || 500}
+                      className={`w-full ${
+                        index === 0 
+                          ? "h-full object-cover" // Full screen cover
+                          : "h-auto object-contain" 
+                      }`}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
-
         {/* Poster Carousel */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
