@@ -478,11 +478,11 @@ export default function AdminPage() {
           </nav>
         </aside>
 
-        {/* Mobile tabs */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-luxury-brown flex z-40">
-          {tabs.slice(0, 4).map((tab) => (
+                {/* Mobile tabs - SHOWS ALL TABS */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-luxury-brown flex z-40 overflow-x-auto">
+          {tabs.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); resetForm(); }}
-              className={`flex-1 flex flex-col items-center py-3 text-[10px] font-body ${
+              className={`flex-1 flex flex-col items-center py-3 text-[10px] font-body whitespace-nowrap ${
                 activeTab === tab.id ? "text-luxury-gold" : "text-cream-200/50"}`}>
               <tab.icon size={16} /> {tab.label}
             </button>
