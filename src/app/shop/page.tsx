@@ -6,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import BackButton from "@/components/BackButton";
+import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Product, ShopInfo, SocialMedia, CATEGORIES, MAJOR_BRANDS } from "@/lib/types";
 
@@ -94,27 +95,28 @@ export default function ShopPage() {
     <>
       <Navigation shopInfo={shopInfo} showBack />
       <main className="min-h-screen bg-transparent pt-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <BackButton />
-        </div>
-
-        <section className="bg-transparent">
-          <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] mb-4">
+        
+        {/* ========== HEADER WITH ARROW (Heading Centered) ========== */}
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 mb-8">
+          <div className="absolute top-0 left-6 lg:left-8">
+            <BackButton />
+          </div>
+          <div className="text-center pt-10 md:pt-0">
+            <h1 className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
               SHOP ALL
-            </motion.h1>
-            <div className="gold-line w-24 mx-auto mb-4" />
-            <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em]">
+            </h1>
+            <div className="gold-line w-24 mx-auto mt-4" />
+            <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em] mt-2">
               {filteredProducts.length} Products
             </p>
           </div>
-        </section>
+        </div>
 
-        {/* STICKY FILTER BAR - Transparent & Blurred */}
-        <section className="sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10">
+        {/* ========== FILTER BAR (DESKTOP ONLY) ========== */}
+        <section className="sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 hidden md:block">
           <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
+              {/* Gender Pills - ONLY ON DESKTOP */}
               <div className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
                 {[null, "men", "women", "kids"].map((g) => (
                   <button key={g || "all"} onClick={() => { setSelectedGender(g); setSelectedCategory(null); }}
@@ -124,6 +126,7 @@ export default function ShopPage() {
                 ))}
               </div>
 
+              {/* Sort + Filter Buttons - ONLY ON DESKTOP */}
               <div className="flex items-center gap-3">
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                   className="font-body text-xs border border-white/20 rounded px-3 py-2 bg-black/40 text-white backdrop-blur-md focus:outline-none">
@@ -140,69 +143,114 @@ export default function ShopPage() {
           </div>
         </section>
 
-        {/* FILTER MENU */}
+        {/* ========== MOBILE FILTERS (Only Filter Button) ========== */}
+        <div className="md:hidden sticky top-20 z-30 bg-gradient-to-r from-black/70 to-black/40 backdrop-blur-md border-b border-white/10 py-3 px-4">
+          <button 
+            onClick={() => setShowFilters(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full text-white bg-black/40 backdrop-blur-md border border-white/20 hover:bg-black/60"
+          >
+            <span>Filters</span>
+            {(selectedBrand || availability !== "all" || selectedCategory) && <span className="w-2 h-2 rounded-full bg-luxury-gold" />}
+          </button>
+        </div>
+
+        {/* ========== FILTER SIDEBAR / PANEL ========== */}
         <AnimatePresence>
           {showFilters && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="overflow-hidden bg-black/80 backdrop-blur-xl border-b border-white/10">
-              <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowFilters(false)}
+                className="fixed inset-0 bg-black/60 z-40"
+              />
+
+              {/* Mobile Sidebar */}
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-black/90 backdrop-blur-xl z-50 overflow-y-auto p-6 md:hidden"
+              >
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="font-display text-xl font-bold text-cream-100">Refine Results</h4>
-                  <button onClick={clearFilters} className="text-xs font-body text-luxury-gold underline underline-offset-2">Clear All</button>
+                  <button onClick={() => setShowFilters(false)} className="p-2 text-cream-100 hover:text-luxury-gold">
+                    <X size={24} />
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {/* Category */}
-                  <div className="border-b md:border-b-0 md:border-r border-white/10 pr-0 md:pr-8 pb-6 md:pb-0">
-                    <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, category: !prev.category }))} className="flex items-center justify-between w-full mb-4">
-                      <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Category</span>
-                      <span className="text-cream-100/60 text-lg">{openFilterSections.category ? "−" : "+"}</span>
-                    </button>
-                    {openFilterSections.category && (
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => setSelectedCategory(null)} className={`text-left font-body text-sm py-1 transition-colors ${!selectedCategory ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>All Categories</button>
-                        {categories.map((cat) => (
-                          <button key={cat} onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)} className={`text-left font-body text-sm py-1 transition-colors ${selectedCategory === cat ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>{cat}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Brand */}
-                  <div className="border-b md:border-b-0 md:border-r border-white/10 pr-0 md:pr-8 pb-6 md:pb-0">
-                    <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, brand: !prev.brand }))} className="flex items-center justify-between w-full mb-4">
-                      <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Brand</span>
-                      <span className="text-cream-100/60 text-lg">{openFilterSections.brand ? "−" : "+"}</span>
-                    </button>
-                    {openFilterSections.brand && (
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => setSelectedBrand(null)} className={`text-left font-body text-sm py-1 transition-colors ${!selectedBrand ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>All Brands</button>
-                        {availableBrands.map((brand) => (
-                          <button key={brand} onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)} className={`text-left font-body text-sm py-1 transition-colors ${selectedBrand === brand ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>{brand}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Availability */}
-                  <div>
-                    <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, availability: !prev.availability }))} className="flex items-center justify-between w-full mb-4">
-                      <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Availability</span>
-                      <span className="text-cream-100/60 text-lg">{openFilterSections.availability ? "−" : "+"}</span>
-                    </button>
-                    {openFilterSections.availability && (
-                      <div className="flex flex-col gap-2">
-                        {(["all", "in-stock", "out-of-stock"] as const).map((opt) => (
-                          <button key={opt} onClick={() => setAvailability(opt)} className={`text-left font-body text-sm py-1 transition-colors ${availability === opt ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>{opt === "all" ? "All Availability" : opt === "in-stock" ? "In Stock" : "Out of Stock"}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+
+                {/* Gender */}
+                <div className="border-b border-white/10 pb-6 mb-6">
+                  <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, category: !prev.category }))}
+                    className="flex items-center justify-between w-full mb-4">
+                    <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Gender</span>
+                    <span className="text-cream-100/60 text-lg">{openFilterSections.category ? "−" : "+"}</span>
+                  </button>
+                  {openFilterSections.category && (
+                    <div className="flex flex-col gap-2">
+                      {[null, "men", "women", "kids"].map((g) => (
+                        <button key={g || "all"} onClick={() => { setSelectedGender(g); setSelectedCategory(null); }}
+                          className={`text-left font-body text-sm py-1 transition-colors ${selectedGender === g ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>
+                          {g ? `${g.charAt(0).toUpperCase() + g.slice(1)}` : "All"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </motion.div>
+
+                {/* Brand */}
+                <div className="border-b border-white/10 pb-6 mb-6">
+                  <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, brand: !prev.brand }))}
+                    className="flex items-center justify-between w-full mb-4">
+                    <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Brand</span>
+                    <span className="text-cream-100/60 text-lg">{openFilterSections.brand ? "−" : "+"}</span>
+                  </button>
+                  {openFilterSections.brand && (
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => setSelectedBrand(null)}
+                        className={`text-left font-body text-sm py-1 transition-colors ${!selectedBrand ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>
+                        All Brands
+                      </button>
+                      {availableBrands.map((brand) => (
+                        <button key={brand} onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
+                          className={`text-left font-body text-sm py-1 transition-colors ${selectedBrand === brand ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>
+                          {brand}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Availability */}
+                <div className="border-b border-white/10 pb-6 mb-6">
+                  <button onClick={() => setOpenFilterSections((prev) => ({ ...prev, availability: !prev.availability }))}
+                    className="flex items-center justify-between w-full mb-4">
+                    <span className="font-body text-xs uppercase tracking-[0.2em] text-cream-100 font-semibold">Availability</span>
+                    <span className="text-cream-100/60 text-lg">{openFilterSections.availability ? "−" : "+"}</span>
+                  </button>
+                  {openFilterSections.availability && (
+                    <div className="flex flex-col gap-2">
+                      {(["all", "in-stock", "out-of-stock"] as const).map((opt) => (
+                        <button key={opt} onClick={() => setAvailability(opt)}
+                          className={`text-left font-body text-sm py-1 transition-colors ${availability === opt ? "text-luxury-gold" : "text-cream-100/70 hover:text-cream-100"}`}>
+                          {opt === "all" ? "All Availability" : opt === "in-stock" ? "In Stock" : "Out of Stock"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button onClick={clearFilters} className="w-full mt-4 py-3 text-center text-xs font-body uppercase tracking-[0.2em] text-cream-100 border border-white/20 rounded-full hover:border-luxury-gold hover:text-luxury-gold transition-all">
+                  Clear All
+                </button>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
-        {/* PRODUCTS GRID */}
+        {/* ========== PRODUCTS GRID ========== */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             {loading ? (

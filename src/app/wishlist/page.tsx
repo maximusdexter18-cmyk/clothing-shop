@@ -6,6 +6,7 @@ import { Heart, ShoppingBag } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import BackButton from "@/components/BackButton"; // ADDED IMPORT
 import { useWishlist } from "@/lib/wishlist-context";
 import { useCart } from "@/lib/cart-context";
 
@@ -23,19 +24,25 @@ export default function WishlistPage() {
       <Navigation />
       <main className="min-h-screen bg-transparent pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] mb-4"
-            >
-              My Wishlist
-            </motion.h1>
-            <div className="gold-line w-24 mx-auto mb-4" />
-            <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em]">
-              {wishlist.length} Products Saved
-            </p>
+          
+          {/* Header with Back Button (Heading Centered) */}
+          <div className="relative mb-12">
+            <div className="absolute top-0 left-0">
+              <BackButton />
+            </div>
+            <div className="text-center">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="font-display text-5xl md:text-7xl font-bold text-cream-100 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] mb-4"
+              >
+                My Wishlist
+              </motion.h1>
+              <div className="gold-line w-24 mx-auto mb-4" />
+              <p className="font-body text-sm text-cream-100/60 uppercase tracking-[0.2em]">
+                {wishlist.length} Products Saved
+              </p>
+            </div>
           </div>
 
           {/* Content */}
@@ -48,7 +55,10 @@ export default function WishlistPage() {
               <p className="font-body text-sm text-cream-100/60 mb-6">
                 Save your favorite products to find them here.
               </p>
-              <Link href="/shop" className="btn-luxury">
+              <Link 
+                href="/shop" 
+                className="inline-block px-8 py-3 rounded-full bg-yellow-500 text-luxury-brown font-body text-sm font-bold uppercase tracking-[0.2em] hover:bg-yellow-400 transition-all duration-300 shadow-lg"
+              >
                 Start Shopping
               </Link>
             </div>

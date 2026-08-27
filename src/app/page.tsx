@@ -37,7 +37,6 @@ export default function HomePage() {
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ========== PRODUCT SELECTION STATE ==========
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
@@ -107,13 +106,10 @@ export default function HomePage() {
   const taglineText =
     shopInfo?.tagline || heroContent?.title || "Redefining Fashion";
 
-  // ========== PRODUCTS FOR CAROUSEL ==========
   const carouselProducts = useMemo(() => {
-    // Return all products for the carousel
-    return products.slice(0, 12); // Limit to 12 for performance
+    return products.slice(0, 12);
   }, [products]);
 
-  // ========== FEATURED & NEW ARRIVALS ==========
   const featuredProducts = products.filter((p) => p.is_featured).slice(0, 6);
   const newArrivals = products.filter((p) => p.is_new_arrival).slice(0, 9);
 
@@ -128,92 +124,9 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== MODERN EDITORIAL HERO ==================== */}
-        <section className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center overflow-hidden pt-24 pb-12">
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-20">
-              
-              {/* LEFT SIDE: Text + Button */}
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 1, delay: 0 }}
-                className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start text-center lg:text-left"
-              >
-                <motion.h1
-                  className="font-display font-bold leading-[0.95] text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
-                  {heroContent?.title?.split(" ").slice(0, -1).join(" ") || "BOLD"}
-                  <br />
-                  <span className="text-luxury-gold drop-shadow-[0_0_30px_rgba(197,165,90,0.4)]">
-                    {heroContent?.title?.split(" ").slice(-1)[0] || "CLASSY"}
-                  </span>
-                </motion.h1>
-
-                <motion.p
-                  className="font-body text-xs sm:text-sm md:text-base text-cream-200/80 uppercase tracking-[0.2em] mt-6 mb-8 max-w-md"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                >
-                  {heroContent?.subtitle || "ELEVATE YOUR STYLE. ELEVATE YOUR PRESENCE."}
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.1 }}
-                  className="mt-4"
-                >
-                  <Link
-                    href="/shop"
-                    className="inline-block px-10 lg:px-12 py-3.5 lg:py-4 rounded-full bg-luxury-gold text-luxury-brown font-body text-xs font-bold uppercase tracking-[0.2em] hover:bg-cream-100 transition-all duration-300 shadow-[0_0_30px_rgba(197,165,90,0.3)] hover:shadow-[0_0_50px_rgba(197,165,90,0.5)]"
-                  >
-                    {heroContent?.button_text || "SHOP NOW"}
-                  </Link>
-                </motion.div>
-              </motion.div>
-
-              {/* RIGHT SIDE: Large Image (NO GRADIENT) */}
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 1, delay: 0.3 }}
-                className="w-full lg:w-1/2 flex justify-center lg:justify-end mt-4 lg:mt-0"
-              >
-                <div className="relative w-full max-w-[280px] sm:max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
-                  <img
-                    src="/hero-model.jpg" 
-                    alt="Hero Model"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.8 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 hidden md:block"
-          >
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-6 h-10 border border-cream-100/30 rounded-full flex justify-center pt-2"
-            >
-              <div className="w-1 h-2 bg-luxury-gold rounded-full" />
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* ==================== SCROLL REVEAL IMAGES ==================== */}
+        {/* ==================== SCROLL REVEAL IMAGES (FIRST SECTION) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
-          <section className="relative pt-0 pb-16">
+          <section className="relative pt-32 pb-16"> {/* pt-32 to account for navbar */}
             <div className="space-y-12 md:space-y-24">
               {scrollRevealImages.map((srImage, index) => (
                 <div key={srImage.id} className="w-full px-0">
@@ -229,7 +142,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ==================== POSTER CAROUSEL ==================== */}
+        {/* ==================== POSTER CAROUSEL (AUTO-MOVING & BIGGER) ==================== */}
         {!loading && carouselProducts.length > 0 && (
           <section className="relative py-12">
             <PosterCarousel

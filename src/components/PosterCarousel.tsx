@@ -17,7 +17,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const [scrollLeftStart, setScrollLeftStart] = useState(0);
   const [autoScrollPaused, setAutoScrollPaused] = useState(false);
 
-  const [cardWidth, setCardWidth] = useState(300);
+  const [cardWidth, setCardWidth] = useState(400);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
 
@@ -31,12 +31,12 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
       "/placeholder.png";
   };
 
-  // Update dimensions
+  // Update dimensions - CARDS ARE MUCH BIGGER NOW
   useEffect(() => {
     const updateMetrics = () => {
       setIsDesktop(window.innerWidth >= 1024);
       setViewportWidth(window.innerWidth);
-      setCardWidth(window.innerWidth < 768 ? 220 : 320);
+      setCardWidth(window.innerWidth < 768 ? 280 : 450);
     };
     updateMetrics();
     window.addEventListener("resize", updateMetrics);
@@ -58,7 +58,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
       const maxDistance = viewportWidth / 2 + cardWidth;
       const normalizedDistance = Math.min(distance / maxDistance, 1);
 
-      const scale = 1.2 - (normalizedDistance * 0.45);
+      const scale = 1.1 - (normalizedDistance * 0.35); // 1.1 (center) to 0.75 (edge)
       const rotateY = normalizedDistance * -25;
       const translateZ = normalizedDistance * -100;
 
@@ -79,9 +79,9 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => el.removeEventListener("scroll", handleScroll);
   }, [updateSpotlight]);
 
-  // ========== AUTO-SCROLL (Desktop only) ==========
+  // ========== AUTO-SCROLL (Both Desktop & Mobile) ==========
   useEffect(() => {
-    if (!isDesktop || isDragging || autoScrollPaused) return;
+    if (isDragging || autoScrollPaused) return;
 
     const el = trackRef.current;
     if (!el) return;
@@ -99,7 +99,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     
     animationFrameId = requestAnimationFrame(scroll);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isDesktop, isDragging, autoScrollPaused]);
+  }, [isDragging, autoScrollPaused]);
 
   // ========== DRAG / SWIPE ==========
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -151,7 +151,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     <div 
       ref={containerRef}
       className="relative w-full flex items-center justify-center overflow-hidden py-6"
-      style={{ perspective: "1200px", height: isDesktop ? '450px' : '320px' }}
+      style={{ perspective: "1200px", height: isDesktop ? '650px' : '500px' }} // MUCH BIGGER HEIGHT
     >
       <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
         <div className="relative w-full h-full">
@@ -187,23 +187,25 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
           const imageUrl = getImageUrl(product);
 
           return (
-            <div              key={`${product.id}-${index}`}
+            <div
+              key={`${product.id}-${index}`}
               className="carousel-card flex-shrink-0 cursor-pointer"
               style={{
                 width: cardWidth,
-                height: isDesktop ? 400 : 280,
+                height: isDesktop ? 550 : 400, // MUCH BIGGER CARD HEIGHT
                 transition: "transform 0.3s ease, opacity 0.3s ease",
                 transformStyle: "preserve-3d",
                 willChange: "transform, opacity",
               }}
               onClick={() => onProductClick(product)}
             >
+              {/* No border, no bg, just the image. Fully visible */}
               <div className="relative w-full h-full rounded-[20px] overflow-hidden">
                 <img
                   src={imageUrl}
                   alt={product.name}
                   draggable={false}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain" // object-contain = NO CROPPING
                 />
               </div>
             </div>
