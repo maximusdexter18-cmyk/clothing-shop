@@ -27,12 +27,11 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   const rafRef = useRef<number>();
   const productsRef = useRef(products);
 
-  // Keep products ref updated
   useEffect(() => {
     productsRef.current = products;
   }, [products]);
 
-  // Duplicate products for infinite loop (4x)
+  // Duplicate products 4 times for perfect infinite loop
   const loopProducts = [...products, ...products, ...products, ...products];
 
   const getImageUrl = (product: Product) => {
@@ -44,7 +43,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     );
   };
 
-  // Update dimensions
   useEffect(() => {
     const updateMetrics = () => {
       const isLarge = window.innerWidth >= 1024;
@@ -57,34 +55,18 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener("resize", updateMetrics);
   }, []);
 
-  // ========== INFINITE LOOP LOGIC (The key fix!) ==========
-  const normalizePosition = useCallback((pos: number) => {
-    const track = trackRef.current;
-    if (!track) return pos;
-
-    // Calculate the width of ONE full set of products (loop size)
-    const setWidth = (cardWidth + 50) * productsRef.current.length;
-
-    // Wrap the position into the middle set's range
-    // We want it to loop from 0 to setWidth, but always stay within the middle
-    if (Math.abs(pos) >= setWidth) {
-      // If we go too far right, wrap to start of the next set
-      return pos % setWidth;
-    }
-    
-    return pos;
-  }, [cardWidth]);
+  // ========== INFINITE LOOP LOGIC ==========
+  const getSetWidth = useCallback(() => {
+    return (cardWidth + (isDesktop ? 50 : 30)) * productsRef.current.length;
+  }, [cardWidth, isDesktop]);
 
   // ========== AUTO-SCROLL (60fps) ==========
   const animate = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-
     if (!isDragging && !isPaused) {
-      const baseSpeed = isDesktop ? 0.8 : 0.5; // Slow glide
+      const baseSpeed = isDesktop ? 0.8 : 0.5;
       setPosition((prev) => {
         let next = prev - baseSpeed;
-        const setWidth = (cardWidth + 50) * productsRef.current.length;
+        const setWidth = getSetWidth();
         
         // Seamless wrap: If we go past one full set, jump back to 0
         if (Math.abs(next) >= setWidth) {
@@ -95,7 +77,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     }
 
     rafRef.current = requestAnimationFrame(animate);
-  }, [isDragging, isPaused, isDesktop, cardWidth]);
+  }, [isDragging, isPaused, isDesktop, getSetWidth]);
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate);
@@ -149,20 +131,17 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
 
   // ========== ARROW BUTTONS ==========
   const scrollByCard = (direction: "left" | "right") => {
-    const moveBy = direction === "left" ? cardWidth + 50 : -(cardWidth + 50);
+    const moveBy = direction === "left" ? cardWidth + (isDesktop ? 50 : 30) : -(cardWidth + (isDesktop ? 50 : 30));
     
     setPosition((prev) => {
       let next = prev + moveBy;
-      const setWidth = (cardWidth + 50) * productsRef.current.length;
-      
-      // Seamless wrap when using arrows
+      const setWidth = getSetWidth();
       if (Math.abs(next) >= setWidth) {
         next = next % setWidth;
       }
       return next;
     });
 
-    // Pause briefly for manual interaction
     setIsPaused(true);
     setTimeout(() => setIsPaused(false), 1500);
   };
@@ -193,7 +172,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
           </div>
         </div>
 
-        {/* Track (Uses transform for maximum performance) */}
+        {/* Track (REMOVED SIDE PADDING for perfect circle connection!) */}
         <div
           ref={trackRef}
           className="flex items-center absolute left-0 will-change-transform"
@@ -201,8 +180,6 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
             transform: `translate3d(${position}px, 0, 0)`,
             transition: isDragging || isPaused ? "none" : "transform 0.05s linear",
             gap: isDesktop ? "50px" : "30px",
-            paddingLeft: viewportWidth / 2 - cardWidth / 2,
-            paddingRight: viewportWidth / 2 - cardWidth / 2,
             cursor: isDragging ? "grabbing" : "grab",
           }}
           onMouseDown={handleMouseDown}
@@ -230,7 +207,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
                 }}
                 onClick={() => onProductClick(product)}
               >
-                {/* Fully rounded corners + No cropping (object-contain) */}
+                {/* Rounded card without borders, object-contain */}
                 <div className="relative w-full h-full rounded-[32px] overflow-hidden">
                   <img
                     src={imageUrl}
@@ -245,7 +222,7 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
         </div>
       </div>
 
-      {/* ========== APPLE-STYLE ARROW BUTTONS (Below Carousel) ========== */}
+      {/* ========== APPLE-STYLE ARROW BUTTONS ========== */}
       <div className="flex items-center justify-center gap-6 mt-6 pb-2">
         <button
           onClick={() => scrollByCard("left")}
