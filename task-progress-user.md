@@ -1,0 +1,7 @@
+- [x] Fix corrupted `.next` cache (vendor-chunks error)
+- [ ] Remove OpeningAnimation from homepage
+- [ ] Hide back button on homepage, show on category/specific pages
+- [ ] Fix tagline to shrink-to-fit + owner-editable subtitle
+- [ ] Nav blends/hides at top on category pages, appears on scroll
+- [ ] Category filters include all genuine options
+- [ ] Verify pages compile and load (200)

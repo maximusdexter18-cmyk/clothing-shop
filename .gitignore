@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+
+# secrets - never commit these
+.env
+.env.local
+.env*.local
+
+# logs and debug files
+*.log
+npm-debug.log*
+build.log
+dev-err.txt
+dev-log.txt
+dev.log
+install.log
+server.log
+tsc-check.txt
+
+# misc
+.DS_Store
+*.tsbuildinfo
+
+# vercel
+.vercel
+
+# editor/tool folders (personal, not part of the app)
+.vscode/
+.claude/

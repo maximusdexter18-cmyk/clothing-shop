@@ -1,0 +1,1 @@
+Only edit CSS, animation code, and visual styling. Never change onClick handlers, form submissions, routing, API calls, or any functional logic. Never rename or remove existing element IDs, classes used in JS, or data attributes used for functionality. If a visual change requires touching JS logic, stop and ask first.
