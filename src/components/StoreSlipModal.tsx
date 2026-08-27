@@ -281,24 +281,26 @@ function renderProductSlipCard(
   const selectedSize = item.size || "Standard";
 
   if (isPdfExport) {
+    // PDF A4 Layout (With Details)
     return (
-      <div className="w-full h-full bg-[#FAF7F2] p-4 flex flex-col justify-between text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
-        {/* Top Bar: Elegant Gold Line */}
+      <div className="w-full h-full bg-[#FAF7F2] p-6 flex flex-col justify-between text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
+        {/* Top Bar */}
         <div className="flex flex-col items-center mb-2">
           <div className="w-24 h-[2px] bg-[#C5A55A] mb-2" />
           <span className="font-mono text-xs font-bold text-[#3D2B1F]/70 tracking-[0.2em]">OG WEAR • CURATED SLIP</span>
           <span className="font-mono text-[10px] text-[#3D2B1F]/40">{refId} • {dateString}</span>
         </div>
 
-        {/* HUGE Dominant Product Image Container */}
-        <div className="relative w-full flex-1 min-h-[600px] my-2 rounded-2xl overflow-hidden border border-[#3D2B1F]/10 shadow-lg flex items-center justify-center"
+        {/* HUGE Product Image */}
+        <div className="relative w-full flex-1 min-h-[550px] my-2 rounded-2xl overflow-hidden border border-[#3D2B1F]/10 shadow-lg flex items-center justify-center"
              style={{ background: "radial-gradient(circle, #FFFFFF 0%, #F5E6C4 100%)" }}>
           <img
             src={fullBodyImg}
             alt={item.product.name}
-            className="max-h-[560px] w-auto max-w-full object-contain mix-blend-multiply"
+            className="max-h-[520px] w-auto max-w-full object-contain mix-blend-multiply"
             crossOrigin="anonymous"
           />
+
           {/* Discount Badge */}
           {isDiscounted && (
             <div className="absolute top-6 right-6 bg-[#3D2B1F] text-[#F5E6C4] font-sans text-sm font-extrabold px-5 py-2 rounded-full shadow-md rotate-3">
@@ -313,22 +315,26 @@ function renderProductSlipCard(
           )}
         </div>
 
-        {/* Details Box: Elegant Luxury Tag */}
-        <div className="bg-white rounded-xl p-6 border border-[#3D2B1F]/10 shadow-sm space-y-4">
-          <div className="flex items-start justify-between">
+        {/* DETAILS BOX - INCLUDES NAME, PRICE, SIZE */}
+        <div className="bg-white rounded-xl p-6 border border-[#3D2B1F]/10 shadow-sm space-y-4 mt-2">
+          
+          {/* Product Name & Brand */}
+          <div className="flex items-start justify-between border-b border-[#3D2B1F]/10 pb-4">
             <div>
               {item.product.brand?.name && (
                 <span className="font-sans text-[10px] font-bold text-[#C5A55A] uppercase tracking-[0.2em] block">
                   {item.product.brand.name}
                 </span>
               )}
-              <h2 className="font-serif text-3xl font-bold text-[#3D2B1F] leading-tight mt-1">
+              <h2 className="font-serif text-2xl font-bold text-[#3D2B1F] leading-tight mt-1">
                 {item.product.name}
               </h2>
             </div>
           </div>
-          <div className="flex items-end justify-between border-t border-[#3D2B1F]/10 pt-4">
-            <div className="flex items-center gap-4">
+
+          {/* Size, Quantity, and Price */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <span className="bg-[#FAF7F2] border border-[#3D2B1F]/20 px-4 py-2 rounded-xl text-[#3D2B1F] font-sans text-xs font-bold">
                 SIZE: <strong className="text-[#C5A55A] text-sm">{selectedSize}</strong>
               </span>
@@ -336,6 +342,7 @@ function renderProductSlipCard(
                 QTY: <strong>{item.quantity}</strong>
               </span>
             </div>
+
             <div className="text-right">
               <div className="font-serif text-3xl font-extrabold text-[#3D2B1F]">
                 ₹{finalPrice.toFixed(0)}
@@ -352,7 +359,7 @@ function renderProductSlipCard(
     );
   }
 
-  // Modal Screen Preview Layout
+  // Modal Screen Preview Layout (With Details)
   return (
     <div className="flex flex-col space-y-3">
       {/* Elegant Top Bar */}
@@ -383,9 +390,9 @@ function renderProductSlipCard(
         )}
       </div>
 
-      {/* Details Box */}
+      {/* DETAILS BOX */}
       <div className="bg-white rounded-xl p-4 border border-cream-300 space-y-3">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between border-b border-cream-200 pb-2">
           <div>
             {item.product.brand?.name && (
               <span className="font-body text-[9px] font-bold text-luxury-gold uppercase tracking-[0.2em] block">
@@ -397,7 +404,8 @@ function renderProductSlipCard(
             </h3>
           </div>
         </div>
-        <div className="flex items-end justify-between border-t border-cream-200 pt-2">
+
+        <div className="flex items-end justify-between">
           <div className="flex items-center gap-2">
             <span className="bg-cream-100 border border-cream-300 px-3 py-1.5 rounded-lg">
               Size: <span className="text-luxury-gold font-extrabold">{selectedSize}</span>
