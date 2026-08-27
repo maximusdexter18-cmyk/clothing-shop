@@ -124,11 +124,12 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
+               {/* ==================== SCROLL REVEAL IMAGES (Strict Mobile/PC Split) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">
             <div className="space-y-0">
               {scrollRevealImages.map((srImage, index) => {
+                // Strict device check
                 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
                 return (
@@ -138,8 +139,9 @@ export default function HomePage() {
                       index === 0 ? "h-screen w-full" : "py-12 md:py-24"
                     }`}
                   >
+                    {/* DEVICE-SPECIFIC IMAGE (No overlap!) */}
                     <ImageReveal
-                      src={isMobile ? srImage.mobile_src || srImage.src : srImage.src}
+                      src={isMobile ? srImage.mobile_src : srImage.src}
                       alt={srImage.alt}
                       height={srImage.height || 500}
                       className={`w-full ${

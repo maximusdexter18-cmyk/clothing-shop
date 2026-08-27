@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       .from("scroll_reveal_images")
       .insert({
         src: body.src,
+        mobile_src: body.mobile_src || null, // <--- ADDED mobile_src
         alt: body.alt,
         height: body.height || 400,
         display_order: body.display_order || 0,
@@ -60,6 +61,11 @@ export async function PATCH(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    }
+
+    // Make sure mobile_src is explicitly set to null if empty
+    if (updates.mobile_src === "") {
+      updates.mobile_src = null;
     }
 
     const { data, error } = await supabaseAdmin

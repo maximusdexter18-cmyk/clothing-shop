@@ -50,7 +50,7 @@ export default function AdminPage() {
   const [shopPhone, setShopPhone] = useState("");
   const [shopAddress, setShopAddress] = useState("");
   const [shopAbout, setShopAbout] = useState("");
-  const [shopLocation, setShopLocation] = useState(""); // <--- ADDED LOCATION
+  const [shopLocation, setShopLocation] = useState("");
 
   // Homepage hero content (owner-editable)
   const [heroContent, setHeroContent] = useState<HomepageContent | null>(null);
@@ -153,7 +153,7 @@ export default function AdminPage() {
         setShopPhone(shopRes.data.phone || "");
         setShopAddress(shopRes.data.address || "");
         setShopAbout(shopRes.data.about_us || "");
-        setShopLocation(shopRes.data.location || ""); // <--- ADDED LOCATION
+        setShopLocation(shopRes.data.location || "");
       }
 
       const heroRes = await supabase
@@ -300,7 +300,7 @@ export default function AdminPage() {
           phone: shopPhone,
           address: shopAddress,
           about_us: shopAbout,
-          location: shopLocation, // <--- ADDED LOCATION
+          location: shopLocation,
         }),
       });
       fetchAdminData();
@@ -376,8 +376,8 @@ export default function AdminPage() {
   };
 
   const handleSaveSrImage = async () => {
-    if (!srFormSrc || !srFormAlt) {
-      alert("Please fill in all required fields");
+    if (!srFormSrc || !srFormAlt || !srFormMobileSrc) {
+      alert("Please fill in all required fields (Desktop URL, Mobile URL, and Alt Text)");
       return;
     }
     setSrSaving(true);
@@ -807,7 +807,6 @@ export default function AdminPage() {
                     className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
 
-                {/* NEW: Location Input */}
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Store Location (Text or Google Maps URL)</label>
                   <input 
@@ -944,56 +943,91 @@ export default function AdminPage() {
               </button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Scroll Reveal Images</h2>
               <p className="font-body text-xs text-luxury-brown/50">
-                Manage the full-screen images that appear between content sections as the user scrolls down the homepage. You can upload a separate image for Desktop and Mobile.
+                Manage the full-screen images that appear between content sections. You must add a separate image for Desktop and Mobile.
               </p>
 
               {/* Add/Edit Form */}
-              <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
+              <div className="space-y-6 bg-white p-6 rounded-sm border border-cream-300/50">
                 <h3 className="font-display text-lg font-bold text-luxury-brown">
                   {editingSrImage ? "Edit Scroll Reveal Image" : "Add New Scroll Reveal Image"}
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Desktop Image URL</label>
-                    <input value={srFormSrc} onChange={(e) => setSrFormSrc(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/desktop.jpg" />
+
+                {/* DESKTOP SECTION */}
+                <div className="p-4 border-2 border-luxury-gold rounded bg-cream-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">
+                      🖥️ Desktop / PC Version (Required)
+                    </span>
+                    <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">REQUIRED</span>
                   </div>
-                  <div>
-                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Mobile Image URL (Optional)</label>
-                    <input value={srFormMobileSrc} onChange={(e) => setSrFormMobileSrc(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/mobile.jpg" />
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Desktop Image URL</label>
+                      <input value={srFormSrc} onChange={(e) => setSrFormSrc(e.target.value)}
+                        className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/desktop-wide.jpg" />
+                    </div>
+
+                    {srFormSrc && (
+                      <div className="relative w-full aspect-video bg-cream-100 rounded border border-cream-300 overflow-hidden">
+                        <img src={srFormSrc} alt={srFormAlt || "Desktop Preview"} className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div>
-                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Alt Text</label>
-                  <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Fashion collection" />
+
+                {/* MOBILE SECTION */}
+                <div className="p-4 border-2 border-emerald-500 rounded bg-emerald-50/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">
+                      📱 Mobile Version (Required)
+                    </span>
+                    <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">REQUIRED</span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Mobile Image URL</label>
+                      <input value={srFormMobileSrc} onChange={(e) => setSrFormMobileSrc(e.target.value)}
+                        className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/mobile-tall.jpg" />
+                    </div>
+
+                    {srFormMobileSrc && (
+                      <div className="relative w-full max-w-[200px] aspect-[9/16] mx-auto bg-cream-100 rounded border border-cream-300 overflow-hidden">
+                        <img src={srFormMobileSrc} alt={srFormAlt || "Mobile Preview"} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* SHARED SETTINGS */}
                 <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Alt Text</label>
+                    <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)}
+                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Outdoor collection" />
+                  </div>
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Height (px)</label>
                     <input type="number" value={srFormHeight} onChange={(e) => setSrFormHeight(parseInt(e.target.value) || 400)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="400" min="200" max="1200" />
+                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="600" min="200" max="1200" />
                   </div>
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Display Order</label>
                     <input type="number" value={srFormOrder} onChange={(e) => setSrFormOrder(parseInt(e.target.value) || 0)}
                       className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="0" min="0" />
                   </div>
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
-                      <input type="checkbox" checked={srFormActive} onChange={(e) => setSrFormActive(e.target.checked)}
-                        className="accent-luxury-gold" /> Active
-                    </label>
-                  </div>
                 </div>
-                {srFormSrc && (
-                  <div className="relative w-full h-48 bg-cream-100 rounded border border-cream-300 overflow-hidden">
-                    <img src={srFormSrc} alt={srFormAlt || "Preview"} className="w-full h-full object-cover" />
-                  </div>
-                )}
+
+                <div className="flex items-center">
+                  <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
+                    <input type="checkbox" checked={srFormActive} onChange={(e) => setSrFormActive(e.target.checked)}
+                      className="accent-luxury-gold" /> Active
+                  </label>
+                </div>
+
                 <div className="flex gap-4">
-                  <button onClick={handleSaveSrImage} disabled={srSaving} className="btn-luxury">
+                  <button onClick={handleSaveSrImage} disabled={srSaving || !srFormSrc || !srFormMobileSrc} className="btn-luxury disabled:opacity-50">
                     {srSaving ? "Saving..." : editingSrImage ? "Update Image" : "Add Image"}
                   </button>
                   <button onClick={resetSrForm}
@@ -1001,6 +1035,12 @@ export default function AdminPage() {
                     Cancel
                   </button>
                 </div>
+
+                {(!srFormSrc || !srFormMobileSrc) && (
+                  <p className="text-xs text-red-500 font-body mt-2">
+                    ⚠️ You must fill in BOTH the Desktop URL and Mobile URL to save.
+                  </p>
+                )}
               </div>
 
               {/* List of Images */}
@@ -1020,10 +1060,19 @@ export default function AdminPage() {
                       <div key={image.id} className="p-4 flex items-center gap-4">
                         <button
                           onClick={() => handleEditSrImage(image)}
-                          className="w-20 h-28 bg-cream-100 rounded border border-cream-300 overflow-hidden flex-shrink-0"
+                          className="flex gap-2 flex-shrink-0"
                           title="Click to edit"
                         >
-                          <img src={image.src} alt={image.alt} className="w-full h-full object-cover" />
+                          {/* Desktop Preview */}
+                          <div className="w-20 h-28 bg-cream-100 rounded border border-cream-300 overflow-hidden">
+                            <img src={image.src} alt={image.alt} className="w-full h-full object-cover" />
+                          </div>
+                          {/* Mobile Preview */}
+                          {image.mobile_src && (
+                            <div className="w-14 h-28 bg-cream-100 rounded border border-cream-300 overflow-hidden">
+                              <img src={image.mobile_src} alt={`${image.alt} Mobile`} className="w-full h-full object-cover" />
+                            </div>
+                          )}
                         </button>
                         <div className="flex-1 min-w-0">
                           <p className="font-body text-sm font-medium text-luxury-brown truncate">{image.alt}</p>
