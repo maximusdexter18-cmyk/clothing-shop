@@ -10,15 +10,12 @@ interface PosterCarouselProps {
 }
 
 const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClick }) => {
-  const trackRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
   const [isDesktop, setIsDesktop] = useState(true);
-  const targetPositionRef = useRef(0);
-  const velocityRef = useRef(0);
-  const animationRef = useRef<number>();
+  const [scrollPos, setScrollPos] = useState(0);
 
-  // Check desktop
+  // Check Desktop
   useEffect(() => {
     const checkScreen = () => {
       setIsDesktop(window.innerWidth >= 1024);
@@ -28,87 +25,69 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
     return () => window.removeEventListener('resize', checkScreen);
   }, []);
 
-  // Duplicate products for infinite loop
+  // Duplicate products for infinite loop (visually)
   const loopProducts = [...products, ...products, ...products];
 
-  // Animation Loop (Auto-scroll)
-  const animate = useCallback(() => {
-    if (!trackRef.current || !wrapperRef.current) return;
-
-    const diff = targetPositionRef.current - position;
-    const followSpeed = 0.08;
-    const newPosition = position + diff * followSpeed + velocityRef.current;
-    setPosition(newPosition);
-
-    velocityRef.current *= 0.95;
-    if (Math.abs(velocityRef.current) < 0.001) {
-      velocityRef.current = 0;
+  // Handle Native Scroll (for 3D Arc effect)
+  const handleScroll = useCallback(() => {
+    if (wrapperRef.current) {
+      setScrollPos(wrapperRef.current.scrollLeft);
     }
+  }, []);
 
-    if (velocityRef.current === 0) {
-      const baseSpeed = isDesktop ? 0.6 : 0.8;
-      targetPositionRef.current -= baseSpeed;
-    }
+  // Calculate 3D Arc Transform
+  const getArcTransform = (index: number): React.CSSProperties => {
+    if (!isDesktop) return {}; // No 3D on mobile to keep swipe smooth
 
-    const halfWidth = trackRef.current.scrollWidth / 3;
-    if (Math.abs(targetPositionRef.current) > halfWidth) {
-      targetPositionRef.current = 0;
-      setPosition(0);
-    }
+    const wrapper = wrapperRef.current;
+    const cardWidth = 320 + 50; // Card width + gap
+    const cardCenter = (index * cardWidth) - scrollPos + (cardWidth / 2);
+    
+    // Center of viewport
+    const viewportCenter = (wrapper?.clientWidth || 0) / 2;
+    
+    // Distance from center
+    const distance = cardCenter - viewportCenter;
+    
+    // Invert rotation so the left card curves right, and right card curves left
+    const rotY = Math.max(-25, Math.min(25, -distance / 15)); 
 
-    trackRef.current.style.transform = `translateX(${newPosition}px)`;
-    animationRef.current = requestAnimationFrame(animate);
-  }, [position, isDesktop]);
+    return {
+      transform: `perspective(1000px) rotateY(${rotY}deg)`,
+      transformStyle: 'preserve-3d',
+    };
+  };
 
-  // Start animation
+  // Auto-scroll effect
   useEffect(() => {
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+    if (!isDesktop || !wrapperRef.current) return;
+    
+    let animationFrameId: number;
+    
+    const scroll = () => {
+      const el = wrapperRef.current;
+      if (el) {
+        // Calculate when to reset to start (0) for infinite loop
+        const halfWidth = el.scrollWidth / 3;
+        if (el.scrollLeft >= halfWidth) {
+          el.scrollLeft = 0;
+        } else {
+          el.scrollLeft += 0.8; // Very slow auto-scroll
+        }
       }
+      animationFrameId = requestAnimationFrame(scroll);
     };
-  }, [animate]);
-
-  // Touch / Wheel support
-  useEffect(() => {
-    const wrapperEl = wrapperRef.current;
-    if (!wrapperEl) return;
-
-    let touchStartX = 0;
-
-    // Mouse Wheel (Desktop only)
-    const handleWheel = (e: WheelEvent) => {
-      if (!isDesktop) return;
-      e.preventDefault();
-      const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      targetPositionRef.current -= delta;
-    };
-
-    // Touch (Mobile)
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.touches[0].clientX;
-      velocityRef.current = 0;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDesktop) return;
-      const touchEndX = e.touches[0].clientX;
-      const delta = touchEndX - touchStartX;
-      targetPositionRef.current -= delta;
-      touchStartX = touchEndX;
-    };
-
-    wrapperEl.addEventListener('wheel', handleWheel, { passive: false });
-    wrapperEl.addEventListener('touchstart', handleTouchStart, { passive: true });
-    wrapperEl.addEventListener('touchmove', handleTouchMove, { passive: true });
-
-    return () => {
-      wrapperEl.removeEventListener('wheel', handleWheel);
-      wrapperEl.removeEventListener('touchstart', handleTouchStart);
-      wrapperEl.removeEventListener('touchmove', handleTouchMove);
-    };
+    
+    animationFrameId = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(animationFrameId);
   }, [isDesktop]);
+
+  // Reset scroll when products change
+  useEffect(() => {
+    if (wrapperRef.current) {
+      wrapperRef.current.scrollLeft = 0;
+    }
+  }, [products]);
 
   if (!products || products.length === 0) {
     return <div className="flex items-center justify-center h-32 bg-transparent"><p className="text-sm text-white/40">No products available</p></div>;
@@ -122,11 +101,18 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
   };
 
   return (
-    <div className="relative w-full bg-transparent overflow-hidden py-4">
+    <div className="relative w-full bg-transparent py-4">
       <div
         ref={wrapperRef}
-        className="relative w-full overflow-hidden"
-        style={{ height: isDesktop ? '420px' : '320px' }}
+        onScroll={handleScroll}
+        className="relative w-full overflow-x-auto scroll-smooth hide-scrollbar"
+        style={{ 
+          perspective: '1500px',
+          WebkitOverflowScrolling: 'touch', // iOS native scrolling
+          height: isDesktop ? '420px' : '320px',
+          scrollBehavior: 'smooth',
+          touchAction: 'pan-x', // Allows native left/right swipe
+        }}
       >
         {/* Background Letters */}
         <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center">
@@ -138,10 +124,10 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
           </div>
         </div>
 
-        {/* Cards - PURE CSS FLEX CONTAINER */}
+        {/* Cards - Native Scrollable Track */}
         <div
           ref={trackRef}
-          className="flex items-center absolute left-0 will-change-transform"
+          className="flex items-center w-max will-change-transform"
           style={{ 
             gap: isDesktop ? '50px' : '30px', 
             padding: isDesktop ? '0 120px' : '0 20px' 
@@ -153,15 +139,16 @@ const PosterCarousel: React.FC<PosterCarouselProps> = ({ products, onProductClic
             return (
               <div
                 key={`${product.id}-${index}`}
-                className="flex-shrink-0 rounded-sm overflow-hidden shadow-xl cursor-pointer"
+                className="flex-shrink-0 rounded-sm overflow-hidden shadow-xl cursor-pointer transition-transform duration-200"
                 style={{
-                  width: isDesktop ? '320px' : '220px', // WIDER CARDS
+                  width: isDesktop ? '320px' : '220px',
                   height: isDesktop ? '400px' : '300px',
                   marginRight: isDesktop ? '50px' : '30px',
+                  ...getArcTransform(index) // Apply the 3D arc effect
                 }}
                 onClick={() => onProductClick(product)}
               >
-                {/* Changed object-cover to object-contain so NO CROPPING, Removed bg-black/20 */}
+                {/* No background color behind image */}
                 <img src={imageUrl} alt={product.name} className="w-full h-full object-contain" />
               </div>
             );

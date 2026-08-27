@@ -150,7 +150,19 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               )}
             </button>
 
-            {/* Mobile Menu (Account moved INSIDE this) */}
+            {/* ACCOUNT BUTTON - ONLY SHOWS ON DESKTOP (HIDDEN ON MOBILE) */}
+            <button
+              onClick={handleAuthClick}
+              className="hidden lg:flex relative p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
+              aria-label={user ? "Account" : "Sign in"}
+            >
+              <User size={18} />
+              {mounted && user && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-luxury-gold rounded-full border-2 border-black/50" />
+              )}
+            </button>
+
+            {/* Mobile Menu Button (Hidden on Desktop) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2.5 rounded-full bg-gradient-to-r from-black/40 to-black/20 text-white hover:text-luxury-gold backdrop-blur-md border border-white/20 transition-all duration-500"
@@ -161,7 +173,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
         </div>
       </motion.div>
 
-      {/* Mobile Menu - Contains Account Button */}
+      {/* Mobile Menu - Contains Account Button (Only visible on Mobile) */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -183,7 +195,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
               ))}
               <div className="gold-line w-20 mx-0 my-4" />
               
-              {/* Account Button NOW HERE */}
+              {/* ACCOUNT BUTTON NOW HERE (ONLY MOBILE) */}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

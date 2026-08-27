@@ -142,21 +142,21 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== MODERN EDITORIAL HERO ==================== */}
-        <section className="relative min-h-screen flex items-center overflow-hidden pt-28 pb-12">
+        {/* ==================== MODERN EDITORIAL HERO (MOBILE SAFE) ==================== */}
+        <section className="relative min-h-screen flex flex-col lg:flex-row items-center justify-center overflow-hidden pt-24 pb-12">
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-20">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-20">
               
               {/* LEFT SIDE: Text + Button */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0 }}
-                className="w-full lg:w-1/2 flex flex-col justify-center"
+                className="w-full lg:w-1/2 flex flex-col justify-center items-center lg:items-start text-center lg:text-left"
               >
-                {/* Bold Stacked Headlines */}
+                {/* Bold Stacked Headlines - Smaller on Mobile */}
                 <motion.h1
-                  className="font-display font-bold leading-[0.95] text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
+                  className="font-display font-bold leading-[0.95] text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl text-cream-100 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
@@ -187,22 +187,22 @@ export default function HomePage() {
                 >
                   <Link
                     href="/shop"
-                    className="inline-block px-12 py-4 rounded-full bg-luxury-gold text-luxury-brown font-body text-xs font-bold uppercase tracking-[0.2em] hover:bg-cream-100 transition-all duration-300 shadow-[0_0_30px_rgba(197,165,90,0.3)] hover:shadow-[0_0_50px_rgba(197,165,90,0.5)]"
+                    className="inline-block px-10 lg:px-12 py-3.5 lg:py-4 rounded-full bg-luxury-gold text-luxury-brown font-body text-xs font-bold uppercase tracking-[0.2em] hover:bg-cream-100 transition-all duration-300 shadow-[0_0_30px_rgba(197,165,90,0.3)] hover:shadow-[0_0_50px_rgba(197,165,90,0.5)]"
                   >
                     {heroContent?.button_text || "SHOP NOW"}
                   </Link>
                 </motion.div>
               </motion.div>
 
-              {/* RIGHT SIDE: Large Image (FROM PUBLIC FOLDER) */}
+              {/* RIGHT SIDE: Large Image */}
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1, delay: 0.3 }}
-                className="w-full lg:w-1/2 flex justify-center lg:justify-end"
+                className="w-full lg:w-1/2 flex justify-center lg:justify-end mt-4 lg:mt-0"
               >
-                {/* Removed gradient overlay here, added max width & margin on mobile */}
-                <div className="relative w-full max-w-[320px] sm:max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
+                {/* Keeps image right next to text on mobile, smaller size */}
+                <div className="relative w-full max-w-[280px] sm:max-w-md lg:max-w-lg aspect-[3/4] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-black/20">
                   <img
                     src="/hero-model.jpg" 
                     alt="Hero Model"
@@ -229,7 +229,6 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
         </section>
-
         {/* ==================== SCROLL REVEAL IMAGES ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative pt-0 pb-16">
