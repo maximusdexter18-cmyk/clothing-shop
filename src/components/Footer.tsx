@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube, Star, Send } from "lucide-react";
 import { ShopInfo, SocialMedia } from "@/lib/types";
 
 interface FooterProps {
@@ -28,11 +29,54 @@ function getEmbedUrl(location: string): string {
   return `https://www.google.com/maps?q=${encodeURIComponent(location)}&output=embed`;
 }
 
+// Helper to create a Google Review link
+function getGoogleReviewLink(location: string): string {
+  if (!location) return "";
+  if (location.startsWith("http")) return location; // Allow admin to paste a custom review link
+  return `https://www.google.com/maps/search/${encodeURIComponent(location)}`; // Fallback search
+}
+
 export default function Footer({ shopInfo, socialMedia }: FooterProps) {
   const mapUrl = shopInfo?.location ? getEmbedUrl(shopInfo.location) : "";
+  const reviewLink = shopInfo?.location ? getGoogleReviewLink(shopInfo.location) : "";
   
   // Only show the text if it's NOT a URL (hide the long link!)
   const showLocationText = shopInfo?.location && !shopInfo.location.startsWith("http");
+
+  // Feedback form states
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send feedback");
+
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setMessage("");
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <footer className="bg-transparent border-t border-white/10 py-16"> {/* TRANSPARENT BACKGROUND */}
@@ -70,7 +114,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
             </div>
           </div>
 
-          {/* Quick Links - Fixed spacing */}
+          {/* Quick Links */}
           <div className="lg:pl-4">
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Quick Links</h3>
             <div className="space-y-3">
@@ -92,7 +136,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
             </div>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact Info & Feedback */}
           <div className="lg:pl-4">
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Contact Us</h3>
             <div className="space-y-4">
@@ -113,9 +157,49 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                 </div>
               )}
             </div>
+
+            {/* Feedback Form */}
+            <div className="mt-8">
+              <h4 className="font-display text-base font-bold text-cream-100 mb-4">Share Your Feedback</h4>
+              <form onSubmit={handleFeedbackSubmit} className="space-y-3">
+                <input 
+                  type="text" 
+                  placeholder="Your Name" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                <input 
+                  type="email" 
+                  placeholder="Your Email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                <textarea 
+                  placeholder="Tell us what you think..." 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  rows={3}
+                  className="w-full bg-white/10 border border-white/10 rounded px-3 py-2 text-sm text-cream-100 placeholder-cream-200/40 focus:outline-none focus:border-luxury-gold"
+                />
+                {error && <p className="text-xs text-red-400">{error}</p>}
+                {success && <p className="text-xs text-emerald-400">Thank you! Your feedback has been sent.</p>}
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center gap-2 bg-luxury-gold text-luxury-brown py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-amber-400 transition-all disabled:opacity-50"
+                >
+                  {submitting ? "Sending..." : <><Send size={14} /> Send Feedback</>}
+                </button>
+              </form>
+            </div>
           </div>
 
-          {/* Location & Google Map Column */}
+          {/* Location, Review Link & Google Map */}
           <div>
             <h3 className="font-display text-lg font-bold text-cream-100 mb-4">Find Us</h3>
             <div className="space-y-4">
@@ -127,6 +211,19 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
                     {shopInfo.location}
                   </p>
                 </div>
+              )}
+
+              {/* Google Review Link */}
+              {reviewLink && (
+                <a
+                  href={reviewLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-sm font-body text-cream-200/80 hover:text-luxury-gold transition-colors"
+                >
+                  <Star size={18} className="text-luxury-gold flex-shrink-0" />
+                  <span>Review us on Google Maps</span>
+                </a>
               )}
               
               {/* Embedded Google Map */}

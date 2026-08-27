@@ -18,7 +18,6 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   const [downloading, setDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
 
   const hiddenPagesRef = useRef<HTMLDivElement>(null);
   const totalPages = items.length;
@@ -38,15 +37,6 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
   const refId = useMemo(() => {
     return `SLIP-${Math.floor(100000 + Math.random() * 900000)}`;
   }, []);
-
-  const toggleCheck = (productId: string) => {
-    setCheckedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(productId)) newSet.delete(productId);
-      else newSet.add(productId);
-      return newSet;
-    });
-  };
 
   const generatePDF = async (): Promise<jsPDF | null> => {
     if (!hiddenPagesRef.current) return null;
@@ -201,7 +191,7 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
 
         {/* VISIBLE PAGE PREVIEW */}
         <div className="w-full bg-[#FAF7F2] border border-luxury-brown/20 rounded-xl p-3 shadow-lg select-none relative overflow-hidden flex flex-col gap-3">
-          {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId, checkedItems.has(activeItem.product.id), toggleCheck)}
+          {renderProductSlipCard(activeItem, activePageIndex, totalPages, dateString, refId)}
         </div>
 
         {/* Action Buttons: Download PDF & Share PDF */}
@@ -238,22 +228,21 @@ export default function StoreSlipModal({ items, onClose }: StoreSlipModalProps) 
             )}
           </button>
         </div>
-
-        {/* HIDDEN PAGES CONTAINER (Used for generating multi-page PDF document) */}
-        <div className="fixed top-[-9999px] left-[-9999px] pointer-events-none opacity-0">
-          <div ref={hiddenPagesRef}>
-            {items.map((item, idx) => (
-              <div
-                key={`pdf-page-${item.product.id}-${idx}`}
-                style={{ width: "210mm", minHeight: "297mm", padding: "10mm", boxSizing: "border-box" }}
-                className="bg-[#FAF7F2] text-luxury-brown flex flex-col justify-between"
-              >
-                {renderProductSlipCard(item, idx, totalPages, dateString, refId, false, () => {}, true)}
-              </div>
-            ))}
-          </div>
-        </div>
       </motion.div>
+
+      {/* HIDDEN PAGES CONTAINER (Moved OUTSIDE the overflow hidden container & NOT opacity-0) */}
+      <div style={{ position: "absolute", top: 0, left: "-9999px", width: "210mm", pointerEvents: "none" }}>
+        <div ref={hiddenPagesRef}>
+          {items.map((item, idx) => (
+            <div
+              key={`pdf-page-${item.product.id}-${idx}`}
+              style={{ width: "210mm", minHeight: "297mm", padding: "10mm", boxSizing: "border-box", backgroundColor: "#FAF7F2" }}
+            >
+              {renderProductSlipCard(item, idx, totalPages, dateString, refId, true)}
+            </div>
+          ))}
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -265,8 +254,6 @@ function renderProductSlipCard(
   totalPages: number,
   dateString: string,
   refId: string,
-  isChecked: boolean,
-  onToggleCheck?: (id: string) => void,
   isPdfExport = false
 ) {
   const fullBodyImg =
@@ -285,11 +272,11 @@ function renderProductSlipCard(
 
   const selectedSize = item.size || "Standard";
 
-  // ========== PDF LAYOUT (Split 50/50) ==========
+  // ========== PDF LAYOUT (Split 50/50, No Mark as Found) ==========
   if (isPdfExport) {
     return (
       <div className="w-full h-full flex flex-col bg-[#FAF7F2] text-[#3D2B1F] border-2 border-[#3D2B1F]/20 rounded-2xl box-border">
-        {/* Top Bar (Full Width) */}
+        {/* Top Bar */}
         <div className="flex items-center justify-between p-4 border-b border-[#3D2B1F]/10">
           <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#3D2B1F]">OG WEAR • CURATED SLIP</span>
           <span className="font-mono text-xs text-[#3D2B1F]/60">{dateString} • {refId}</span>
@@ -357,18 +344,20 @@ function renderProductSlipCard(
           </div>
         </div>
 
-        {/* Bottom Checkmark Bar */}
-        <div className="p-4 border-t border-[#3D2B1F]/10 flex items-center justify-between">
-          <span className="text-xs font-bold text-[#3D2B1F]/60">Picked for easy item identification</span>
-          <div className="flex items-center gap-1 text-xs font-extrabold text-emerald-600">
-            <Check size={14} /> FOUND
-          </div>
+        {/* Bottom Bar - Just a small note, NO button */}
+        <div className="p-3 border-t border-[#3D2B1F]/10 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-[#3D2B1F]/40">
+            Item {pageIdx + 1} of {totalPages}
+          </span>
+          <span className="text-[10px] font-bold text-[#3D2B1F]/40">
+            Picked for easy item identification
+          </span>
         </div>
       </div>
     );
   }
 
-  // ========== MODAL PREVIEW (Split 50/50) ==========
+  // ========== MODAL PREVIEW (Split 50/50, No Mark as Found) ==========
   return (
     <div className="flex flex-col space-y-3">
       {/* Top Bar */}
@@ -432,20 +421,6 @@ function renderProductSlipCard(
           </div>
         </div>
       </div>
-
-      {/* Check Button */}
-      {onToggleCheck && (
-        <button
-          onClick={() => onToggleCheck(item.product.id)}
-          className={`w-full py-3 rounded-full font-body text-xs font-bold uppercase tracking-wider transition-all ${
-            isChecked
-              ? "bg-emerald-600 text-white"
-              : "bg-luxury-brown text-cream-100 hover:bg-luxury-darkBrown"
-          }`}
-        >
-          {isChecked ? "✓ Found in Store" : "Mark as Found"}
-        </button>
-      )}
     </div>
   );
 }

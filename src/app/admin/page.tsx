@@ -14,13 +14,14 @@ export default function AdminPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "add-product" | "edit-product" | "shop-settings" | "hero" | "social" | "scroll-reveal">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "add-product" | "edit-product" | "shop-settings" | "social" | "scroll-reveal" | "feedback">("dashboard");
 
   // Data
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null);
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
+  const [feedback, setFeedback] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Product form
@@ -51,14 +52,7 @@ export default function AdminPage() {
   const [shopAddress, setShopAddress] = useState("");
   const [shopAbout, setShopAbout] = useState("");
   const [shopLocation, setShopLocation] = useState("");
-
-  // Homepage hero content (owner-editable)
-  const [heroContent, setHeroContent] = useState<HomepageContent | null>(null);
-  const [heroTitle, setHeroTitle] = useState("");
-  const [heroSubtitle, setHeroSubtitle] = useState("");
-  const [heroDescription, setHeroDescription] = useState("");
-  const [heroButton, setHeroButton] = useState("");
-  const [savingHero, setSavingHero] = useState(false);
+  const [shopReviewLink, setShopReviewLink] = useState("");
 
   // Category image uploads
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
@@ -123,11 +117,12 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [productsRes, brandsRes, shopRes, socialRes] = await Promise.all([
+      const [productsRes, brandsRes, shopRes, socialRes, feedbackRes] = await Promise.all([
         supabase.from("products").select("*, brand:brands(*), images:product_images(*), sizes:product_sizes(*)").order("created_at", { ascending: false }),
         supabase.from("brands").select("*").order("name"),
         supabase.from("shop_info").select("*").limit(1).single(),
         supabase.from("social_media").select("*").order("display_order"),
+        supabase.from("site_feedback").select("*").order("created_at", { ascending: false }),
       ]);
 
       const [catMenRes, catWomenRes, catKidsRes] = await Promise.all([
@@ -139,6 +134,7 @@ export default function AdminPage() {
       setBrands(brandsRes.data || []);
       setShopInfo(shopRes.data);
       setSocialMedia(socialRes.data || []);
+      setFeedback(feedbackRes.data || []);
 
       const catImages: Record<string, string> = {};
       if (catMenRes.data?.image_url) catImages.men = catMenRes.data.image_url;
@@ -154,20 +150,8 @@ export default function AdminPage() {
         setShopAddress(shopRes.data.address || "");
         setShopAbout(shopRes.data.about_us || "");
         setShopLocation(shopRes.data.location || "");
+        setShopReviewLink(shopRes.data.review_link || "");
       }
-
-      const heroRes = await supabase
-        .from("homepage_content")
-        .select("*")
-        .eq("section_type", "hero")
-        .limit(1)
-        .maybeSingle();
-      const hc = (heroRes.data as HomepageContent) || null;
-      setHeroContent(hc);
-      setHeroTitle(hc?.title || "");
-      setHeroSubtitle(hc?.subtitle || "");
-      setHeroDescription(hc?.description || "");
-      setHeroButton(hc?.button_text || "");
 
       const srRes = await supabase
         .from("scroll_reveal_images")
@@ -301,6 +285,7 @@ export default function AdminPage() {
           address: shopAddress,
           about_us: shopAbout,
           location: shopLocation,
+          review_link: shopReviewLink, // <--- ADDED
         }),
       });
       fetchAdminData();
@@ -328,30 +313,6 @@ export default function AdminPage() {
       body: JSON.stringify({ action: "save-social", platform, url, is_active: isActive }),
     });
     fetchAdminData();
-  };
-
-  const handleSaveHeroContent = async () => {
-    setSavingHero(true);
-    try {
-      await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "homepage-content",
-          section_type: "hero",
-          title: heroTitle,
-          subtitle: heroSubtitle,
-          description: heroDescription,
-          button_text: heroButton,
-        }),
-      });
-      fetchAdminData();
-      alert("Hero content saved! The homepage subtitle/description will update.");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSavingHero(false);
-    }
   };
 
   // Scroll Reveal handlers
@@ -480,9 +441,9 @@ export default function AdminPage() {
     { id: "products" as const, label: "Products", icon: Package },
     { id: "add-product" as const, label: "Add Product", icon: Plus },
     { id: "shop-settings" as const, label: "Shop Settings", icon: Settings },
-    { id: "hero" as const, label: "Hero Content", icon: Settings },
     { id: "social" as const, label: "Social Media", icon: Settings },
     { id: "scroll-reveal" as const, label: "Scroll Reveal", icon: Image },
+    { id: "feedback" as const, label: "Feedback", icon: BarChart3 },
   ];
 
   return (
@@ -818,6 +779,16 @@ export default function AdminPage() {
                 </div>
 
                 <div>
+                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Google Maps Review Link</label>
+                  <input 
+                    value={shopReviewLink} 
+                    onChange={(e) => setShopReviewLink(e.target.value)}
+                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" 
+                    placeholder="Paste the link to review your shop on Google Maps"
+                  />
+                </div>
+
+                <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">About Us</label>
                   <textarea value={shopAbout} onChange={(e) => setShopAbout(e.target.value)} rows={4}
                     className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
@@ -859,45 +830,6 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Hero Content (owner-editable) */}
-          {activeTab === "hero" && (
-            <div className="space-y-6 max-w-2xl">
-              <button onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
-                ← Back to Dashboard
-              </button>
-              <h2 className="font-display text-2xl font-bold text-luxury-brown">Hero Content</h2>
-              <p className="font-body text-xs text-luxury-brown/50">
-                Edit the big tagline and the text shown under it on the homepage. The tagline automatically shrinks to fit, so a long phrase won't overflow.
-              </p>
-              <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
-                <div>
-                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Tagline (big text on hero)</label>
-                  <input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Redefining Fashion" />
-                </div>
-                <div>
-                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Subtitle (text under the tagline)</label>
-                  <input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Crafted for those who wear confidence" />
-                </div>
-                <div>
-                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Description</label>
-                  <textarea value={heroDescription} onChange={(e) => setHeroDescription(e.target.value)} rows={3}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Discover the latest trends..." />
-                </div>
-                <div>
-                  <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Button Text</label>
-                  <input value={heroButton} onChange={(e) => setHeroButton(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="SHOP NOW" />
-                </div>
-              </div>
-              <button onClick={handleSaveHeroContent} disabled={savingHero} className="btn-luxury">
-                {savingHero ? "Saving..." : "Save Hero Content"}
-              </button>
             </div>
           )}
 
@@ -1100,6 +1032,32 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Feedback */}
+          {activeTab === "feedback" && (
+            <div className="space-y-6 max-w-3xl">
+              <button onClick={() => setActiveTab("dashboard")}
+                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
+                ← Back to Dashboard
+              </button>
+              <h2 className="font-display text-2xl font-bold text-luxury-brown">Customer Feedback</h2>
+              {feedback.length === 0 ? (
+                <p className="font-body text-luxury-brown/50">No feedback submitted yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {feedback.map((fb: any) => (
+                    <div key={fb.id} className="bg-white p-4 rounded-sm border border-cream-300/50">
+                      <div className="flex justify-between">
+                        <p className="font-body text-sm font-bold text-luxury-brown">{fb.name} <span className="font-normal text-luxury-brown/50">({fb.email})</span></p>
+                        <span className="text-xs text-luxury-brown/40">{new Date(fb.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="font-body text-sm text-luxury-brown mt-2">{fb.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </main>
