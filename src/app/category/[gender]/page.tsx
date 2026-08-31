@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductPopup from "@/components/ProductPopup";
-import LoadingScreen from "@/components/LoadingScreen"; // ADDED THE LOADER
+import LoadingScreen from "@/components/Loadingscreen"; // ADDED THE LOADER
 import { supabase } from "@/lib/supabase";
 import { Product, ShopInfo, SocialMedia, CATEGORIES, MAJOR_BRANDS } from "@/lib/types";
 import { useCart } from "@/lib/cart-context";

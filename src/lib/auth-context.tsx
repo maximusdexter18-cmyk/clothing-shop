@@ -22,7 +22,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // FORCE GLOBAL LOADER TO SHOW FIRST
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Add a slight delay so the PageTransition logo loader shows first
+      document.documentElement.style.overflow = 'hidden'; // Prevent scroll while loading
+    }, 0);
 
+    return () => clearTimeout(timer);
+  }, []);
   // ===== CHECK SESSION ON MOUNT =====
   useEffect(() => {
     const initAuth = async () => {

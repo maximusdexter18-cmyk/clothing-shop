@@ -36,7 +36,15 @@ export default function HomePage() {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [loading, setLoading] = useState(true);
+  // FORCE GLOBAL LOADER TO SHOW FIRST
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Add a slight delay so the PageTransition logo loader shows first
+      document.documentElement.style.overflow = 'hidden'; // Prevent scroll while loading
+    }, 0);
 
+    return () => clearTimeout(timer);
+  }, []);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
@@ -137,6 +145,14 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
+
+
+        
+
+
+
+
+
               {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">

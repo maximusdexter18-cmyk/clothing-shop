@@ -19,7 +19,15 @@ export default function ShopPage() {
   const [shopInfo, setShopInfo] = useState<ShopInfo | null>(null);
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  // FORCE GLOBAL LOADER TO SHOW FIRST
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Add a slight delay so the PageTransition logo loader shows first
+      document.documentElement.style.overflow = 'hidden'; // Prevent scroll while loading
+    }, 0);
 
+    return () => clearTimeout(timer);
+  }, []);
   const [selectedGender, setSelectedGender] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
