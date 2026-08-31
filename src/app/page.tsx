@@ -137,7 +137,7 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-        {/* ==================== SCROLL REVEAL IMAGES (Strict Mobile/PC Split) ==================== */}
+              {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">
             <div className="space-y-0">
@@ -148,13 +148,14 @@ export default function HomePage() {
                   <div
                     key={srImage.id}
                     className={`w-full px-0 ${
-                      index === 0 ? "h-screen w-full" : "py-12 md:py-24"
+                      index === 0 ? "h-screen w-full" : ""
                     }`}
                   >
                     <ImageReveal
                       src={isMobile ? srImage.mobile_src || srImage.src : srImage.src}
                       alt={srImage.alt}
-                      height={srImage.height || 500}
+                      // Use mobile_height on mobile, height on desktop
+                      height={isMobile ? srImage.mobile_height || srImage.height || 500 : srImage.height || 500}
                       className={`w-full ${
                         index === 0 ? "h-full object-cover" : "h-auto object-contain"
                       }`}

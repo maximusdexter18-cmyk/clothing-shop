@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, Mail, Eye, EyeOff, Package, BarChart3, Settings, Plus, Edit, Trash2, Upload, LogOut, Image, GripVertical } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, Package, BarChart3, Settings, Plus, Edit, Trash2, Upload, LogOut, Image } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Product, Brand, ShopInfo, SocialMedia, HomepageContent, ProductImage, ProductSize, Gender, CATEGORIES, MAJOR_BRANDS, SIZES, IMAGE_TYPES, IMAGE_TYPE_LABELS, ImageType, ScrollRevealImage } from "@/lib/types";
+import { Product, Brand, ShopInfo, SocialMedia, Gender, CATEGORIES, MAJOR_BRANDS, SIZES, IMAGE_TYPES, ImageType, ScrollRevealImage } from "@/lib/types";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -64,6 +64,7 @@ export default function AdminPage() {
   const [srFormMobileSrc, setSrFormMobileSrc] = useState("");
   const [srFormAlt, setSrFormAlt] = useState("");
   const [srFormHeight, setSrFormHeight] = useState(400);
+  const [srFormMobileHeight, setSrFormMobileHeight] = useState(400); // <--- ADDED
   const [srFormOrder, setSrFormOrder] = useState(0);
   const [srFormActive, setSrFormActive] = useState(true);
   const [editingSrImage, setEditingSrImage] = useState<ScrollRevealImage | null>(null);
@@ -117,27 +118,20 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      // Fetch main data
-      const [productsRes, brandsRes, shopRes, socialRes] = await Promise.all([
+      const [productsRes, brandsRes, shopRes, socialRes, feedbackRes] = await Promise.all([
         supabase.from("products").select("*, brand:brands(*), images:product_images(*), sizes:product_sizes(*)").order("created_at", { ascending: false }),
         supabase.from("brands").select("*").order("name"),
         supabase.from("shop_info").select("*").limit(1).single(),
         supabase.from("social_media").select("*").order("display_order"),
+        supabase.from("site_feedback").select("*").order("created_at", { ascending: false }),
       ]);
 
-      // Fetch category images
       const [catMenRes, catWomenRes, catKidsRes] = await Promise.all([
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_men").limit(1).maybeSingle(),
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_women").limit(1).maybeSingle(),
         supabase.from("homepage_content").select("image_url").eq("section_type", "category_kids").limit(1).maybeSingle(),
       ]);
       
-      // Fetch Feedback SEPARATELY so it NEVER crashes the entire fetch!
-      const feedbackRes = await supabase
-        .from("site_feedback")
-        .select("*")
-        .order("created_at", { ascending: false });
-
       setProducts(productsRes.data || []);
       setBrands(brandsRes.data || []);
       setShopInfo(shopRes.data);
@@ -233,13 +227,9 @@ export default function AdminPage() {
       IMAGE_TYPES.forEach((type) => {
         const files = formImagesByType[type] || [];
         files.forEach((file) => {
-          if (type === "full-body") {
-            formData.append("fullBodyImages[]", file);
-          } else if (type === "small") {
-            formData.append("smallImages[]", file);
-          } else {
-            formData.append("mockupImages[]", file);
-          }
+          if (type === "full-body") formData.append("fullBodyImages[]", file);
+          else if (type === "small") formData.append("smallImages[]", file);
+          else formData.append("mockupImages[]", file);
         });
       });
 
@@ -323,12 +313,12 @@ export default function AdminPage() {
     fetchAdminData();
   };
 
-  // Scroll Reveal handlers
   const resetSrForm = () => {
     setSrFormSrc("");
     setSrFormMobileSrc("");
     setSrFormAlt("");
     setSrFormHeight(400);
+    setSrFormMobileHeight(400); // <--- ADDED
     setSrFormOrder(0);
     setSrFormActive(true);
     setEditingSrImage(null);
@@ -340,6 +330,7 @@ export default function AdminPage() {
     setSrFormMobileSrc(image.mobile_src || "");
     setSrFormAlt(image.alt);
     setSrFormHeight(image.height);
+    setSrFormMobileHeight(image.mobile_height || 400); // <--- ADDED
     setSrFormOrder(image.display_order);
     setSrFormActive(image.is_active);
   };
@@ -356,6 +347,7 @@ export default function AdminPage() {
         mobile_src: srFormMobileSrc,
         alt: srFormAlt,
         height: srFormHeight,
+        mobile_height: srFormMobileHeight, // <--- ADDED
         display_order: srFormOrder,
         is_active: srFormActive,
       };
@@ -456,7 +448,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-cream-50">
-      {/* Header */}
       <header className="bg-luxury-brown text-cream-100 py-4 px-6 flex items-center justify-between">
         <h1 className="font-display text-xl font-bold tracking-wider">Admin Dashboard</h1>
         <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-body text-cream-200/60 hover:text-cream-100">
@@ -465,7 +456,6 @@ export default function AdminPage() {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside className="w-56 min-h-[calc(100vh-64px)] bg-luxury-darkBrown p-4 hidden md:block">
           <nav className="space-y-1">
             {tabs.map((tab) => (
@@ -478,7 +468,6 @@ export default function AdminPage() {
           </nav>
         </aside>
 
-                {/* Mobile tabs - SHOWS ALL TABS */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-luxury-brown flex z-40 overflow-x-auto">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); resetForm(); }}
@@ -489,9 +478,7 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Main content */}
         <main className="flex-1 p-6 pb-24 md:pb-6">
-          {/* Dashboard */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Overview</h2>
@@ -511,7 +498,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Products List */}
           {(activeTab === "products" || activeTab === "edit-product") && activeTab === "products" && (
             <div className="space-y-4">
               <button onClick={() => setActiveTab("dashboard")}
@@ -583,7 +569,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Add/Edit Product Form */}
           {(activeTab === "add-product" || activeTab === "edit-product") && (
             <div className="space-y-6 max-w-2xl">
               <button onClick={() => { resetForm(); setActiveTab("products"); }}
@@ -594,11 +579,8 @@ export default function AdminPage() {
                 {editingProduct ? "Edit Product" : "Add New Product"}
               </h2>
               {saveError && (
-                <p className="bg-red-50 text-red-600 text-sm font-body px-4 py-3 rounded border border-red-200">
-                  {saveError}
-                </p>
+                <p className="bg-red-50 text-red-600 text-sm font-body px-4 py-3 rounded border border-red-200">{saveError}</p>
               )}
-
               <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -654,7 +636,6 @@ export default function AdminPage() {
                   </select>
                 </div>
 
-                {/* Sizes */}
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-2 block">Available Sizes</label>
                   <div className="flex flex-wrap gap-2">
@@ -668,7 +649,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Image uploads: Full Body, Small, Mockup */}
                 {[
                   { type: "full-body" as ImageType, label: "Full Body Images", hint: "Used in the FULL BODY poster carousel on the homepage." },
                   { type: "small" as ImageType, label: "Small Images", hint: "Used in the small images grid (Section 2) on the homepage." },
@@ -676,31 +656,21 @@ export default function AdminPage() {
                 ].map(({ type, label, hint }) => (
                   <div key={type} className="p-4 border border-dashed border-luxury-brown/20 rounded">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-body text-sm font-semibold text-luxury-brown">
-                        {label}
-                      </span>
-                      <span className="font-body text-xs text-luxury-brown/40">
-                        {(formImagesByType[type] || []).length} selected
-                      </span>
+                      <span className="font-body text-sm font-semibold text-luxury-brown">{label}</span>
+                      <span className="font-body text-xs text-luxury-brown/40">{(formImagesByType[type] || []).length} selected</span>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {(formImagesByType[type] || []).map((file, i) => (
                         <div key={i} className="relative w-20 h-24 bg-cream-100 border border-cream-300 rounded overflow-hidden">
                           <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
                           <button type="button"
-                            onClick={() => setFormImagesByType((prev) => ({
-                              ...prev,
-                              [type]: (prev[type] || []).filter((_, idx) => idx !== i),
-                            }))}
-                            className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs">
-                            ×
-                          </button>
+                            onClick={() => setFormImagesByType((prev) => ({ ...prev, [type]: (prev[type] || []).filter((_, idx) => idx !== i) }))}
+                            className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs">×</button>
                         </div>
                       ))}
                     </div>
                     <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-body text-luxury-gold hover:underline">
-                      <Upload size={14} />
-                      Add {label} (multiple allowed)
+                      <Upload size={14} /> Add {label} (multiple allowed)
                       <input type="file" accept="image/*" multiple className="hidden"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
@@ -708,20 +678,16 @@ export default function AdminPage() {
                           e.target.value = "";
                         }} />
                     </label>
-                    <p className="font-body text-xs text-luxury-brown/40 mt-2">
-                      {hint}
-                    </p>
+                    <p className="font-body text-xs text-luxury-brown/40 mt-2">{hint}</p>
                   </div>
                 ))}
 
                 <div className="flex gap-6">
                   <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
-                    <input type="checkbox" checked={formIsNewArrival} onChange={(e) => setFormIsNewArrival(e.target.checked)}
-                      className="accent-luxury-gold" /> New Arrival
+                    <input type="checkbox" checked={formIsNewArrival} onChange={(e) => setFormIsNewArrival(e.target.checked)} className="accent-luxury-gold" /> New Arrival
                   </label>
                   <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
-                    <input type="checkbox" checked={formIsFeatured} onChange={(e) => setFormIsFeatured(e.target.checked)}
-                      className="accent-luxury-gold" /> Featured
+                    <input type="checkbox" checked={formIsFeatured} onChange={(e) => setFormIsFeatured(e.target.checked)} className="accent-luxury-gold" /> Featured
                   </label>
                 </div>
               </div>
@@ -732,122 +698,60 @@ export default function AdminPage() {
                   {saving ? "Saving..." : editingProduct ? "Update Product" : "Add Product"}
                 </button>
                 <button onClick={() => { resetForm(); setActiveTab("products"); }}
-                  className="px-6 py-3 border border-luxury-brown/20 text-luxury-brown font-body text-sm uppercase tracking-wider hover:bg-cream-200">
-                  Cancel
-                </button>
+                  className="px-6 py-3 border border-luxury-brown/20 text-luxury-brown font-body text-sm uppercase tracking-wider hover:bg-cream-200">Cancel</button>
               </div>
             </div>
           )}
 
-          {/* Shop Settings */}
           {activeTab === "shop-settings" && (
             <div className="space-y-6 max-w-2xl">
               <button onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
-                ← Back to Dashboard
-              </button>
+                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">← Back to Dashboard</button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Shop Settings</h2>
               <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Shop Name</label>
-                  <input value={shopName} onChange={(e) => setShopName(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                  <input value={shopName} onChange={(e) => setShopName(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Tagline</label>
-                  <input value={shopTagline} onChange={(e) => setShopTagline(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                  <input value={shopTagline} onChange={(e) => setShopTagline(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Email</label>
-                    <input value={shopEmail} onChange={(e) => setShopEmail(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                    <input value={shopEmail} onChange={(e) => setShopEmail(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                   </div>
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Phone</label>
-                    <input value={shopPhone} onChange={(e) => setShopPhone(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                    <input value={shopPhone} onChange={(e) => setShopPhone(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Address</label>
-                  <textarea value={shopAddress} onChange={(e) => setShopAddress(e.target.value)} rows={2}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                  <textarea value={shopAddress} onChange={(e) => setShopAddress(e.target.value)} rows={2} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
-
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Store Location (Text or Google Maps URL)</label>
-                  <input 
-                    value={shopLocation} 
-                    onChange={(e) => setShopLocation(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" 
-                    placeholder="e.g. 123 Main Street, Mumbai, India (or Google Maps URL)"
-                  />
+                  <input value={shopLocation} onChange={(e) => setShopLocation(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="e.g. 123 Main Street, Mumbai, India" />
                 </div>
-
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Google Maps Review Link</label>
-                  <input 
-                    value={shopReviewLink} 
-                    onChange={(e) => setShopReviewLink(e.target.value)}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" 
-                    placeholder="Paste the link to review your shop on Google Maps"
-                  />
+                  <input value={shopReviewLink} onChange={(e) => setShopReviewLink(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://g.co/kgs/..." />
                 </div>
-
                 <div>
                   <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">About Us</label>
-                  <textarea value={shopAbout} onChange={(e) => setShopAbout(e.target.value)} rows={4}
-                    className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
+                  <textarea value={shopAbout} onChange={(e) => setShopAbout(e.target.value)} rows={4} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" />
                 </div>
               </div>
-              <button onClick={handleSaveShopInfo} disabled={saving} className="btn-luxury">
-                {saving ? "Saving..." : "Save Settings"}
-              </button>
-
-              {/* Category Images */}
-              <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
-                <h3 className="font-display text-lg font-bold text-luxury-brown">Category Images</h3>
-                <p className="font-body text-xs text-luxury-brown/50">
-                  Upload images for the MEN / WOMEN / KIDS category boxes on the homepage.
-                </p>
-                {(["men", "women", "kids"] as const).map((gender) => (
-                  <div key={gender} className="flex items-center gap-4">
-                    <span className="font-body text-sm uppercase tracking-wider text-luxury-brown w-24">{gender}</span>
-                    {categoryImages[gender] && (
-                      <img src={categoryImages[gender]} alt={gender} className="w-16 h-20 object-cover rounded border border-cream-300" />
-                    )}
-                    <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-body text-luxury-gold hover:underline">
-                      <Upload size={14} />
-                      {categoryImages[gender] ? "Replace" : "Upload"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleCategoryImageUpload(gender, file);
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
-                    {categoryUploading[gender] && (
-                      <span className="font-body text-xs text-luxury-brown/40">Uploading...</span>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <button onClick={handleSaveShopInfo} disabled={saving} className="btn-luxury">{saving ? "Saving..." : "Save Settings"}</button>
             </div>
           )}
 
-          {/* Social Media */}
           {activeTab === "social" && (
             <div className="space-y-6 max-w-2xl">
               <button onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
-                ← Back to Dashboard
-              </button>
+                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">← Back to Dashboard</button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Social Media Links</h2>
               <div className="space-y-4 bg-white p-6 rounded-sm border border-cream-300/50">
                 {socialMedia.map((social) => (
@@ -856,9 +760,7 @@ export default function AdminPage() {
                     <input value={social.url || ""} onChange={(e) => {
                       const updated = socialMedia.map((s) => s.platform === social.platform ? { ...s, url: e.target.value } : s);
                       setSocialMedia(updated);
-                    }}
-                      className="flex-1 border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm"
-                      placeholder={`Enter ${social.platform} URL`} />
+                    }} className="flex-1 border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder={`Enter ${social.platform} URL`} />
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={social.is_active} onChange={(e) => {
                         const updated = socialMedia.map((s) => s.platform === social.platform ? { ...s, is_active: e.target.checked } : s);
@@ -874,40 +776,30 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Scroll Reveal Images */}
           {activeTab === "scroll-reveal" && (
             <div className="space-y-6 max-w-3xl">
               <button onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
-                ← Back to Dashboard
-              </button>
+                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">← Back to Dashboard</button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Scroll Reveal Images</h2>
-              <p className="font-body text-xs text-luxury-brown/50">
-                Manage the full-screen images that appear between content sections. You must add a separate image for Desktop and Mobile.
-              </p>
+              <p className="font-body text-xs text-luxury-brown/50">Manage the full-screen images. You must add a separate image and height for Desktop and Mobile.</p>
 
-              {/* Add/Edit Form */}
               <div className="space-y-6 bg-white p-6 rounded-sm border border-cream-300/50">
-                <h3 className="font-display text-lg font-bold text-luxury-brown">
-                  {editingSrImage ? "Edit Scroll Reveal Image" : "Add New Scroll Reveal Image"}
-                </h3>
+                <h3 className="font-display text-lg font-bold text-luxury-brown">{editingSrImage ? "Edit Scroll Reveal Image" : "Add New Scroll Reveal Image"}</h3>
 
-                {/* DESKTOP SECTION */}
                 <div className="p-4 border-2 border-luxury-gold rounded bg-cream-50">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">
-                      🖥️ Desktop / PC Version (Required)
-                    </span>
+                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">🖥️ Desktop / PC Version (Required)</span>
                     <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">REQUIRED</span>
                   </div>
-                  
                   <div className="space-y-3">
                     <div>
                       <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Desktop Image URL</label>
-                      <input value={srFormSrc} onChange={(e) => setSrFormSrc(e.target.value)}
-                        className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/desktop-wide.jpg" />
+                      <input value={srFormSrc} onChange={(e) => setSrFormSrc(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/desktop-wide.jpg" />
                     </div>
-
+                    <div>
+                      <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Desktop Height (px)</label>
+                      <input type="number" value={srFormHeight} onChange={(e) => setSrFormHeight(parseInt(e.target.value) || 400)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="600" min="200" max="1200" />
+                    </div>
                     {srFormSrc && (
                       <div className="relative w-full aspect-video bg-cream-100 rounded border border-cream-300 overflow-hidden">
                         <img src={srFormSrc} alt={srFormAlt || "Desktop Preview"} className="w-full h-full object-cover" />
@@ -916,22 +808,20 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* MOBILE SECTION */}
                 <div className="p-4 border-2 border-emerald-500 rounded bg-emerald-50/30">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">
-                      📱 Mobile Version (Required)
-                    </span>
+                    <span className="font-body text-xs font-bold text-luxury-brown uppercase tracking-wider">📱 Mobile Version (Required)</span>
                     <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">REQUIRED</span>
                   </div>
-                  
                   <div className="space-y-3">
                     <div>
                       <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Mobile Image URL</label>
-                      <input value={srFormMobileSrc} onChange={(e) => setSrFormMobileSrc(e.target.value)}
-                        className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/mobile-tall.jpg" />
+                      <input value={srFormMobileSrc} onChange={(e) => setSrFormMobileSrc(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="https://example.com/mobile-tall.jpg" />
                     </div>
-
+                    <div>
+                      <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Mobile Height (px)</label>
+                      <input type="number" value={srFormMobileHeight} onChange={(e) => setSrFormMobileHeight(parseInt(e.target.value) || 400)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="500" min="200" max="1200" />
+                    </div>
                     {srFormMobileSrc && (
                       <div className="relative w-full max-w-[200px] aspect-[9/16] mx-auto bg-cream-100 rounded border border-cream-300 overflow-hidden">
                         <img src={srFormMobileSrc} alt={srFormAlt || "Mobile Preview"} className="w-full h-full object-cover" />
@@ -940,50 +830,30 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* SHARED SETTINGS */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Alt Text</label>
-                    <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Outdoor collection" />
-                  </div>
-                  <div>
-                    <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Height (px)</label>
-                    <input type="number" value={srFormHeight} onChange={(e) => setSrFormHeight(parseInt(e.target.value) || 400)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="600" min="200" max="1200" />
+                    <input value={srFormAlt} onChange={(e) => setSrFormAlt(e.target.value)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="Outdoor collection" />
                   </div>
                   <div>
                     <label className="font-body text-xs uppercase tracking-wider text-luxury-brown/60 mb-1 block">Display Order</label>
-                    <input type="number" value={srFormOrder} onChange={(e) => setSrFormOrder(parseInt(e.target.value) || 0)}
-                      className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="0" min="0" />
+                    <input type="number" value={srFormOrder} onChange={(e) => setSrFormOrder(parseInt(e.target.value) || 0)} className="w-full border border-luxury-brown/20 rounded px-3 py-2 font-body text-sm" placeholder="0" min="0" />
                   </div>
-                </div>
-
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
-                    <input type="checkbox" checked={srFormActive} onChange={(e) => setSrFormActive(e.target.checked)}
-                      className="accent-luxury-gold" /> Active
-                  </label>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 font-body text-sm text-luxury-brown cursor-pointer">
+                      <input type="checkbox" checked={srFormActive} onChange={(e) => setSrFormActive(e.target.checked)} className="accent-luxury-gold" /> Active
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex gap-4">
                   <button onClick={handleSaveSrImage} disabled={srSaving || !srFormSrc || !srFormMobileSrc} className="btn-luxury disabled:opacity-50">
                     {srSaving ? "Saving..." : editingSrImage ? "Update Image" : "Add Image"}
                   </button>
-                  <button onClick={resetSrForm}
-                    className="px-6 py-3 border border-luxury-brown/20 text-luxury-brown font-body text-sm uppercase tracking-wider hover:bg-cream-200">
-                    Cancel
-                  </button>
+                  <button onClick={resetSrForm} className="px-6 py-3 border border-luxury-brown/20 text-luxury-brown font-body text-sm uppercase tracking-wider hover:bg-cream-200">Cancel</button>
                 </div>
-
-                {(!srFormSrc || !srFormMobileSrc) && (
-                  <p className="text-xs text-red-500 font-body mt-2">
-                    ⚠️ You must fill in BOTH the Desktop URL and Mobile URL to save.
-                  </p>
-                )}
               </div>
 
-              {/* List of Images */}
               <div className="bg-white rounded-sm border border-cream-300/50 overflow-hidden">
                 <div className="p-4 border-b border-cream-300/50 flex items-center justify-between">
                   <h3 className="font-display text-lg font-bold text-luxury-brown">All Scroll Reveal Images</h3>
@@ -998,16 +868,10 @@ export default function AdminPage() {
                   <div className="divide-y divide-cream-200">
                     {scrollRevealImages.map((image) => (
                       <div key={image.id} className="p-4 flex items-center gap-4">
-                        <button
-                          onClick={() => handleEditSrImage(image)}
-                          className="flex gap-2 flex-shrink-0"
-                          title="Click to edit"
-                        >
-                          {/* Desktop Preview */}
+                        <button onClick={() => handleEditSrImage(image)} className="flex gap-2 flex-shrink-0" title="Click to edit">
                           <div className="w-20 h-28 bg-cream-100 rounded border border-cream-300 overflow-hidden">
                             <img src={image.src} alt={image.alt} className="w-full h-full object-cover" />
                           </div>
-                          {/* Mobile Preview */}
                           {image.mobile_src && (
                             <div className="w-14 h-28 bg-cream-100 rounded border border-cream-300 overflow-hidden">
                               <img src={image.mobile_src} alt={`${image.alt} Mobile`} className="w-full h-full object-cover" />
@@ -1021,18 +885,16 @@ export default function AdminPage() {
                             <p className="font-body text-xs text-luxury-brown/40 truncate">Mobile: {image.mobile_src}</p>
                           )}
                           <div className="flex items-center gap-4 mt-1">
-                            <span className="font-body text-xs text-luxury-brown/50">Height: {image.height}px</span>
-                            <span className="font-body text-xs text-luxury-brown/50">Order: {image.display_order}</span>
+                            <span className="font-body text-xs text-luxury-brown/50">Desktop Height: {image.height}px</span>
+                            {image.mobile_height && (
+                              <span className="font-body text-xs text-luxury-brown/50">Mobile Height: {image.mobile_height}px</span>
+                            )}
                             <span className={`font-body text-xs px-2 py-0.5 rounded ${image.is_active ? "bg-luxury-gold/20 text-luxury-gold" : "bg-luxury-brown/10 text-luxury-brown/50"}`}>
                               {image.is_active ? "Active" : "Inactive"}
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteSrImage(image.id)}
-                          className="text-luxury-brown/40 hover:text-red-500 text-luxury-gold"
-                          title="Delete"
-                        >
+                        <button onClick={() => handleDeleteSrImage(image.id)} className="text-luxury-brown/40 hover:text-red-500 text-luxury-gold" title="Delete">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -1043,13 +905,9 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Feedback */}
           {activeTab === "feedback" && (
             <div className="space-y-6 max-w-3xl">
-              <button onClick={() => setActiveTab("dashboard")}
-                className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">
-                ← Back to Dashboard
-              </button>
+              <button onClick={() => setActiveTab("dashboard")} className="flex items-center gap-1 text-xs font-body text-luxury-brown/50 hover:text-luxury-gold transition-colors">← Back to Dashboard</button>
               <h2 className="font-display text-2xl font-bold text-luxury-brown">Customer Feedback</h2>
               {feedback.length === 0 ? (
                 <p className="font-body text-luxury-brown/50">No feedback submitted yet.</p>
@@ -1058,12 +916,7 @@ export default function AdminPage() {
                   {feedback.map((fb: any) => (
                     <div key={fb.id} className="bg-white p-4 rounded-sm border border-cream-300/50">
                       <div className="flex justify-between">
-                        <p className="font-body text-sm font-bold text-luxury-brown">
-                          {fb.name || "Anonymous"} 
-                          {fb.email && fb.email !== "Not provided" && (
-                            <span className="font-normal text-luxury-brown/50"> ({fb.email})</span>
-                          )}
-                        </p>
+                        <p className="font-body text-sm font-bold text-luxury-brown">{fb.name || "Anonymous"} <span className="font-normal text-luxury-brown/50">({fb.email || "Not provided"})</span></p>
                         <span className="text-xs text-luxury-brown/40">{new Date(fb.created_at).toLocaleString()}</span>
                       </div>
                       <p className="font-body text-sm text-luxury-brown mt-2">{fb.message}</p>

@@ -198,6 +198,7 @@ export interface ScrollRevealImage {
   alt: string;
   height: number;
   display_order: number;
+  mobile_height?: number; 
   is_active: boolean;
   created_at: string;
   updated_at: string;
