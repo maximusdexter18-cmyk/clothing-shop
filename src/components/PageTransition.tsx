@@ -37,7 +37,7 @@ export default function PageTransition() {
           >
             {/* REPLACE '/logo.png' WITH YOUR ACTUAL LOGO FILENAME */}
             <img 
-              src="/logo.png" 
+              src="adidas.jpg" 
               alt="Loading..." 
               className="w-40 h-auto object-contain" 
             />
