@@ -36,30 +36,39 @@ export default function HomePage() {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [scrollRevealImages, setScrollRevealImages] = useState<ScrollRevealImage[]>([]);
   const [loading, setLoading] = useState(true);
-  // FORCE GLOBAL LOADER TO SHOW FIRST
+  
+  // ========== MOBILE/DESKTOP STATE ==========
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Add a slight delay so the PageTransition logo loader shows first
-      document.documentElement.style.overflow = 'hidden'; // Prevent scroll while loading
-    }, 0);
-
-    return () => clearTimeout(timer);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    handleResize(); // Set initial state
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
-  // ========== FORCE SCROLL TO TOP ON PAGE LOAD ==========
+  // ========== FIX SCROLL + SCROLL TO TOP ON LOAD (No more overflow: hidden!) ==========
   useEffect(() => {
     if (!loading) {
-      // 1. Immediately jump to absolute top
+      // 1. Immediately unblock scrolling!
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+
+      // 2. Jump to top
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      
-      // 2. Wait for the images to finish rendering, then jump again (just in case)
+
+      // 3. Wait for images to render, then jump again (just in case)
       setTimeout(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
       }, 100);
     }
   }, [loading]);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | undefined>();
 
   useEffect(() => {
     fetchData();
@@ -145,21 +154,11 @@ export default function HomePage() {
 
       <main className="min-h-screen">
         
-
-
-        
-
-
-
-
-
-              {/* ==================== SCROLL REVEAL IMAGES (Responsive for Mobile & PC) ==================== */}
+        {/* ==================== SCROLL REVEAL IMAGES ==================== */}
         {!loading && scrollRevealImages.length > 0 && (
           <section className="relative">
             <div className="space-y-0">
               {scrollRevealImages.map((srImage, index) => {
-                const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
                 return (
                   <div
                     key={srImage.id}
@@ -168,10 +167,9 @@ export default function HomePage() {
                     }`}
                   >
                     <ImageReveal
-                      src={isMobile ? srImage.mobile_src || srImage.src : srImage.src}
+                      src={isMobile ? (srImage.mobile_src || srImage.src) : srImage.src}
                       alt={srImage.alt}
-                      // Use mobile_height on mobile, height on desktop
-                      height={isMobile ? srImage.mobile_height || srImage.height || 500 : srImage.height || 500}
+                      height={isMobile ? (srImage.mobile_height || srImage.height || 500) : (srImage.height || 500)}
                       className={`w-full ${
                         index === 0 ? "h-full object-cover" : "h-auto object-contain"
                       }`}
@@ -203,7 +201,7 @@ export default function HomePage() {
 
         {/* ==================== MORE PICKS ==================== */}
         {!loading && carouselProducts.length > 0 && (
-          <section className="relative py-12">
+          <section className="relative py-12 mt-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-8">
                 {carouselProducts.map((product, i) => {
