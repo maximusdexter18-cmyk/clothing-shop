@@ -401,7 +401,7 @@ export default function CategoryPage() {
         </section>
       </main>
 
-      {/* Product Popup - THE EXACT SAME AS HOMEPAGE */}
+      {/* Product Popup */}
       <AnimatePresence>
         {selectedProduct && (
           <ProductPopup

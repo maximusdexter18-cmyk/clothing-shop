@@ -6,15 +6,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function PageTransition() {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as TRUE so it shows first
 
   useEffect(() => {
-    // Show white overlay + logo EVERY time the route changes
+    // Reset loading to true every time pathname changes
     setIsLoading(true);
-    
-    // Adjust this time if you want it to show longer or shorter
-    const timer = setTimeout(() => setIsLoading(false), 800); 
-    
+
+    // Wait for the page to fully load (800ms, or adjust if needed)
+    const timer = setTimeout(() => setIsLoading(false), 800);
+
+    // Cleanup
     return () => clearTimeout(timer);
   }, [pathname]);
 
@@ -28,35 +29,22 @@ export default function PageTransition() {
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] bg-white flex items-center justify-center"
         >
-          {/* Centered Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col items-center justify-center"
-          >
-            {/* REPLACE '/logo.png' WITH YOUR ACTUAL LOGO FILENAME */}
+          <div className="flex flex-col items-center">
+            {/* REPLACE WITH YOUR LOGO */}
             <img 
               src="adidas.jpg" 
               alt="Loading..." 
               className="w-40 h-auto object-contain" 
             />
-            
-            {/* Subtle infinite loading bar */}
-            <motion.div
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              className="mt-6"
-            >
-              <div className="w-8 h-1 bg-gray-200 rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full bg-gray-400"
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                />
-              </div>
-            </motion.div>
-          </motion.div>
+            {/* Loading Bar */}
+            <div className="mt-6 w-8 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-gray-400"
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              />
+            </div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
