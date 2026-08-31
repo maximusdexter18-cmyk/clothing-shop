@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
 import { useParams } from "next/navigation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ProductPopup from "@/components/ProductPopup";
-import LoadingScreen from "@/components/Loadingscreen"; // ADDED THE LOADER
 import { supabase } from "@/lib/supabase";
 import { Product, ShopInfo, SocialMedia, CATEGORIES, MAJOR_BRANDS } from "@/lib/types";
 import { useCart } from "@/lib/cart-context";
@@ -103,9 +102,6 @@ export default function CategoryPage() {
 
   return (
     <>
-      {/* LOADING SCREEN - SHOWS ON THIS PAGE TOO! */}
-      {loading && <LoadingScreen />}
-
       <Navigation shopInfo={shopInfo} showBack />
       <main className="min-h-screen bg-transparent pt-32">
         
