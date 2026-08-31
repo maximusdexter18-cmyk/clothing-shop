@@ -7,9 +7,9 @@ interface BackgroundVideoProps {
 
 export default function BackgroundVideo({ videoSrc, posterSrc }: BackgroundVideoProps) {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-black">
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-black pointer-events-none">
       <video
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover pointer-events-none"
         src={videoSrc}
         poster={posterSrc}
         autoPlay
