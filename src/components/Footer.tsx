@@ -78,7 +78,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
           {/* Brand & Social Column */}
           <div>
             <h2 className="font-display text-3xl font-bold tracking-wider text-cream-100 mb-4">
-              {shopInfo?.shop_name || "OG WEAR"}
+              {shopInfo?.shop_name || "clothing shop"}
             </h2>
             <div className="gold-line w-16 mb-6" />
             <p className="font-body text-sm text-cream-200/60 leading-relaxed mb-6">
@@ -240,7 +240,7 @@ export default function Footer({ shopInfo, socialMedia }: FooterProps) {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-body text-xs text-cream-200/40">
-            © {new Date().getFullYear()} {shopInfo?.shop_name || "OG WEAR"}. All rights reserved.
+            © {new Date().getFullYear()} {shopInfo?.shop_name || "Clothing Shop"}. All rights reserved.
           </p>
           <p className="font-body text-xs text-cream-200/40">
             Crafted with <span className="text-luxury-gold">♥</span> for fashion lovers.

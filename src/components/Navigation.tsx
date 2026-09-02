@@ -93,7 +93,7 @@ export default function Navigation({ shopInfo, showBack = false }: NavProps) {
             ) : (
               <Link href="/" className="flex flex-col">
                 <span className="font-display text-3xl lg:text-4xl font-extrabold tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                  {shopInfo?.shop_name || "OG WEAR"}
+                  {shopInfo?.shop_name || "clothing shop"}
                 </span>
               </Link>
             )}

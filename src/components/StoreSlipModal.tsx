@@ -317,7 +317,7 @@ function renderProductSlipCard(
         fontFamily: "Arial, sans-serif",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: "10px", borderBottom: "1px solid rgba(61,43,31,0.1)", fontWeight: "bold", fontSize: "11px" }}>
-          <span>OG WEAR • CURATED SLIP</span>
+          <span>clothing shop • CURATED SLIP</span>
           <span style={{ opacity: 0.6 }}>{dateString} • {refId}</span>
         </div>
 
@@ -385,7 +385,7 @@ function renderProductSlipCard(
   return (
     <div className="flex flex-col space-y-3">
       <div className="flex items-center justify-between border-b border-luxury-brown/10 pb-2">
-        <span className="font-mono text-[10px] font-bold tracking-[0.15em] text-luxury-brown">OG WEAR • CURATED SLIP</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.15em] text-luxury-brown">clothing shop • CURATED SLIP</span>
         <span className="font-mono text-[9px] text-luxury-brown/60">{dateString} • {refId}</span>
       </div>
 

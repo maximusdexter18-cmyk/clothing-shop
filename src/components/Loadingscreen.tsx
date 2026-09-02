@@ -24,7 +24,7 @@ export default function LoadingScreen() {
             const parent = (e.target as HTMLImageElement).parentElement;
             if (parent) {
               const text = document.createElement('p');
-              text.innerText = 'OG WEAR';
+              text.innerText = 'clothing shop';
               text.className = 'font-display text-4xl font-bold text-gray-800';
               parent.appendChild(text);
             }

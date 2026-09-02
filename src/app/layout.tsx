@@ -26,7 +26,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "OG wear - Redefining Fashion",
+  title: "Clothing Shop - Redefining Fashion",
   description: "Discover the latest trends in luxury fashion.",
 };
 

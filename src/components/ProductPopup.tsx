@@ -243,7 +243,7 @@ export default function ProductPopup({
                     color: "rgba(255,255,255,0.6)" 
                   }}
                 >
-                  {product.brand?.name || "OG WEAR"}
+                  {product.brand?.name || "clothing shop"}
                 </p>
 
                 <h2 
